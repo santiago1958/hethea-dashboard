@@ -129,8 +129,51 @@ tr:hover td{background:var(--surface2)}
 @media(max-width:900px){.kpis,.grid3,.input-grid{grid-template-columns:1fr 1fr}main{padding:16px 16px 110px}}
 @media(max-width:600px){.kpis,.grid3,.input-grid{grid-template-columns:1fr}}
 </style>
+<style id="loginStyles">
+#loginScreen{position:fixed;inset:0;background:#07101f;z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px}
+#loginScreen.hidden{display:none}
+.login-box{background:#0f1f35;border:1px solid #1d3352;border-radius:24px;padding:48px 40px;max-width:420px;width:100%;text-align:center;position:relative;overflow:hidden}
+.login-box::before{content:'';position:absolute;top:-60px;left:-60px;width:200px;height:200px;background:radial-gradient(circle,rgba(0,229,180,.12),transparent 70%);pointer-events:none}
+.login-box::after{content:'';position:absolute;bottom:-60px;right:-60px;width:200px;height:200px;background:radial-gradient(circle,rgba(61,139,255,.1),transparent 70%);pointer-events:none}
+.login-logo{font-size:2.8rem;margin-bottom:8px}
+.login-brand{font-family:"Syne",sans-serif;font-size:1.8rem;font-weight:800;color:#00e5b4;letter-spacing:-1px;margin-bottom:4px}
+.login-sub{font-size:0.82rem;color:#4e6a8a;margin-bottom:36px}
+.login-field{text-align:left;margin-bottom:14px}
+.login-field label{display:block;font-size:0.72rem;color:#4e6a8a;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+.login-input{width:100%;background:#07101f;border:1px solid #1d3352;border-radius:10px;color:#dde8f5;padding:12px 16px;font-size:0.95rem;font-family:"DM Sans",sans-serif;transition:border-color .2s;outline:none}
+.login-input:focus{border-color:#00e5b4}
+.login-btn{width:100%;background:#00e5b4;color:#000;border:none;border-radius:10px;padding:13px;font-family:"Syne",sans-serif;font-size:1rem;font-weight:800;cursor:pointer;margin-top:8px;transition:all .2s}
+.login-btn:hover{background:#00ccaa;transform:translateY(-1px)}
+.login-error{color:#ff6b6b;font-size:0.82rem;margin-top:10px;display:none;padding:10px;background:rgba(255,107,107,.1);border-radius:8px;border:1px solid rgba(255,107,107,.3)}
+.login-footer{margin-top:28px;font-size:0.75rem;color:#4e6a8a}
+@keyframes loginShake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+.shake{animation:loginShake .4s ease}
+@keyframes fadeOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(1.02)}}
+.fade-out{animation:fadeOut .4s ease forwards}
+</style>
 </head>
 <body>
+
+<!-- PANTALLA DE LOGIN -->
+<div id="loginScreen">
+  <div class="login-box" id="loginBox">
+    <div class="login-logo">📊</div>
+    <div class="login-brand">HETHEA</div>
+    <div class="login-sub">Dashboard Financiero — Acceso privado</div>
+    <div class="login-field">
+      <label>Usuario</label>
+      <input class="login-input" type="text" id="loginUser" placeholder="Ingresa tu usuario" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('loginPass').focus()">
+    </div>
+    <div class="login-field">
+      <label>Contraseña</label>
+      <input class="login-input" type="password" id="loginPass" placeholder="••••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="login-btn" onclick="doLogin()">Entrar →</button>
+    <div class="login-error" id="loginError">❌ Usuario o contraseña incorrectos</div>
+    <div class="login-footer">🔒 Acceso restringido — Solo personal autorizado</div>
+  </div>
+</div>
+
 
 <div id="statusBar" class="loading"></div>
 
@@ -525,6 +568,39 @@ window.exportarExcel = function() {
   XLSX.writeFile(wb,`Finanzas_${anio}.xlsx`);
   toast('✓ Excel descargado');
 };
+
+// ── LOGIN ──
+async function hashStr(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+async function doLogin() {
+  const user = document.getElementById('loginUser').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  const passHash = await hashStr(pass);
+  const correctHash = await hashStr('hethea2025sd');
+  if (user === 'hethea' && passHash === correctHash) {
+    sessionStorage.setItem('hethea_auth', '1');
+    const box = document.getElementById('loginBox');
+    box.classList.add('fade-out');
+    setTimeout(()=>{ document.getElementById('loginScreen').classList.add('hidden'); }, 400);
+  } else {
+    const box = document.getElementById('loginBox');
+    document.getElementById('loginError').style.display = 'block';
+    box.classList.add('shake');
+    setTimeout(()=>box.classList.remove('shake'), 400);
+    document.getElementById('loginPass').value = '';
+  }
+}
+
+function checkAuth() {
+  if (sessionStorage.getItem('hethea_auth') === '1') {
+    document.getElementById('loginScreen').classList.add('hidden');
+  }
+}
+checkAuth();
+
 </script>
 </body>
 </html>
