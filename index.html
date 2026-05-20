@@ -181,9 +181,9 @@
       <div class="login-field">
         <label>Contraseña</label>
         <input class="login-input" type="password" id="loginPass">
-        <button class="eye-btn" onclick="togglePass()" id="eyeBtn">VER</button>
+        <button type="button" class="eye-btn" onclick="togglePass()" id="eyeBtn">VER</button>
       </div>
-      <button class="login-btn" onclick="doLogin()">Acceder</button>
+      <button type="button" class="login-btn" onclick="doLogin()">Acceder</button>
       <div class="login-error" id="loginError">Credenciales incorrectas. Verifique su acceso.</div>
     </div>
   </div>
@@ -393,11 +393,19 @@
         t._tid = setTimeout(() => t.className = '', 2800);
     }
 
+    // CORRECCIÓN: Función para ver/ocultar contraseña
     function togglePass() {
         const p = document.getElementById('loginPass');
         const b = document.getElementById('eyeBtn');
-        if (p.type === 'password') { p.type = 'text'; b.textContent = 'OCULTAR'; }
-        else { p.type = 'password'; b.textContent = 'VER'; }
+        if (!p || !b) return;
+        
+        if (p.type === 'password') {
+            p.type = 'text';
+            b.textContent = 'OCULTAR';
+        } else {
+            p.type = 'password';
+            b.textContent = 'VER';
+        }
     }
 
     function setSyncStatus(state, label) {
@@ -451,7 +459,7 @@
                     <td style="font-weight:600;">${u.usuario} ${u.usuario === 'hethea' || u.usuario === 'SSHADMIN' ? '<span class="tag tag-i" style="margin-left:5px">Principal</span>' : ''}</td>
                     <td><span class="tag ${u.rol === 'admin' ? 'tag-g' : u.rol === 'coadmin' ? 'tag-i' : 'tag-e'}">${u.rol}</span></td>
                     <td style="color:var(--muted);">${new Date(u.created_at).toLocaleDateString('es-CO')}</td>
-                    <td>${u.usuario !== 'hethea' && u.usuario !== 'SSHADMIN' ? `<button class="btn btn-ghost btn-s" style="color:var(--danger)" onclick="borrarUsuario('${u.id}')">Remover</button>' : '—'}</td>
+                    <td>${u.usuario !== 'hethea' && u.usuario !== 'SSHADMIN' ? `<button class="btn btn-ghost btn-s" style="color:var(--danger)" onclick="borrarUsuario('${u.id}')">Remover</button>` : '—'}</td>
                 </tr>
             `).join('');
         }
@@ -478,23 +486,43 @@
         cargarUsuariosList();
     }
 
-    // ── LOGIN ──
+    // CORRECCIÓN: Lógica de acceso mejorada
     async function doLogin() {
-        const user = document.getElementById('loginUser').value.trim();
-        const pass = document.getElementById('loginPass').value;
-        if (!user || !pass) return;
-        const passHash = await hashStr(pass);
-        const { data } = await sb.from('usuarios').select('*').eq('usuario', user).single();
-        const isMasterFallback = (user === 'SSHADMIN' && pass === 'Bancol125*');
-        if (isMasterFallback || (data && data.password_hash === passHash)) {
-            sessionStorage.setItem('hethea_auth', '1');
-            sessionStorage.setItem('hethea_rol', isMasterFallback ? 'admin' : data.rol);
-            sessionStorage.setItem('hethea_user', user);
-            document.getElementById('loginScreen').style.display = 'none';
-            initApp();
-        } else {
-            document.getElementById('loginError').style.display = 'block';
-            document.getElementById('loginPass').value = '';
+        const userEl = document.getElementById('loginUser');
+        const passEl = document.getElementById('loginPass');
+        const errEl = document.getElementById('loginError');
+        
+        const user = userEl.value.trim();
+        const pass = passEl.value;
+        
+        if (!user || !pass) {
+            toast('Por favor, ingrese usuario y contraseña', 'er');
+            return;
+        }
+
+        try {
+            const passHash = await hashStr(pass);
+            const { data, error } = await sb.from('usuarios')
+                .select('*')
+                .eq('usuario', user)
+                .single();
+
+            const isMasterFallback = (user === 'SSHADMIN' && pass === 'Bancol125*');
+
+            if (isMasterFallback || (data && data.password_hash === passHash)) {
+                sessionStorage.setItem('hethea_auth', '1');
+                sessionStorage.setItem('hethea_rol', isMasterFallback ? 'admin' : data.rol);
+                sessionStorage.setItem('hethea_user', user);
+                
+                document.getElementById('loginScreen').style.display = 'none';
+                initApp();
+            } else {
+                errEl.style.display = 'block';
+                passEl.value = ''; // Limpiar contraseña en error
+            }
+        } catch (e) {
+            console.error("Error de login:", e);
+            toast('Error de conexión', 'er');
         }
     }
 
@@ -615,6 +643,11 @@
     };
 
     // ── RENDERERS ──
+    let barInst = null;
+    let donutInst = null;
+    let lineInst = null;
+    const THEME_COLORS = ['#8a8d91', '#276749', '#9b2c2c', '#975a16', '#6b6b6b'];
+
     window.renderResumen = function() {
         if(currentRol === 'usuario') return;
         const lbl = verTodo ? `Todo ${anio}` : MESES_F[mesRes];
@@ -623,7 +656,6 @@
         const { ing, eg, gf, bal } = verTodo ? totAnio() : totMes(mesRes);
         document.getElementById('kpis').innerHTML = ` <div class="kpi ing"><div class="kpi-label">Ingresos Brutos</div><div class="kpi-value">${fmt(ing)}</div><div class="kpi-sub">${lbl}</div></div> <div class="kpi eg"><div class="kpi-label">Egresos Operativos</div><div class="kpi-value">${fmt(eg)}</div><div class="kpi-sub">${lbl}</div></div> <div class="kpi gf"><div class="kpi-label">Gastos Estructurales</div><div class="kpi-value">${fmt(gf)}</div><div class="kpi-sub">${lbl}</div></div> <div class="kpi bal" style="border-bottom: 3px solid ${bal >= 0 ? 'var(--green)' : 'var(--danger)'}"><div class="kpi-label">Balance Neto</div><div class="kpi-value ${bal < 0 ? 'neg' : ''}">${fmt(bal)}</div><div class="kpi-sub">Rentabilidad del periodo</div></div>`;
         
-        // ... (Charts logic kept as original)
         const d12 = MESES.map((_, i) => totMes(i));
         if(barInst) barInst.destroy();
         barInst = new Chart(document.getElementById('barChart'), {
@@ -645,12 +677,12 @@
 
         const arr = verTodo ? movs.filter(m => m.anio === anio && filtroTiendas.includes(m.tienda || 'Online')) : movs.filter(m => m.mes === mesRes && m.anio === anio && filtroTiendas.includes(m.tienda || 'Online'));
         document.getElementById('movCount').textContent = arr.length + ' registros';
-        document.getElementById('movBody').innerHTML = arr.length ? arr.map(m => `<tr> <td style="color:var(--muted);">${MESES[m.mes]}</td> <td><span class="tag" style="background:var(--surface2); color:var(--text);">${m.tienda || 'Online'}</span></td> <td>${m.cat}</td> <td><span class="tag ${m.tipo === 'Ingreso' ? 'tag-i' : m.tipo === 'Egreso' ? 'tag-e' : 'tag-g'}">${m.tipo === 'GastoFijo' ? 'G.Fijo' : m.tipo}</span></td> <td class="${m.tipo === 'Ingreso' ? 'pos' : 'neg'}">${m.tipo === 'Ingreso' ? '+' : '-'}${fmt(parseFloat(m.monto))}</td> <td style="color:var(--muted); font-size: 0.75rem;">${m.usuario || 'hethea'}</td> <td>${(currentUser === 'hethea' || currentUser === 'SSHADMIN' || m.usuario === currentUser) ? `<button class="btn btn-ghost btn-s" onclick="eliminar('${m.id}')">✕</button>' : '—'}</td></tr>`).join('') : `<tr><td colspan="7"><div class="empty">Sin actividad registrada en esta selección.</div></td></tr>`;
+        document.getElementById('movBody').innerHTML = arr.length ? arr.map(m => `<tr> <td style="color:var(--muted);">${MESES[m.mes]}</td> <td><span class="tag" style="background:var(--surface2); color:var(--text);">${m.tienda || 'Online'}</span></td> <td>${m.cat}</td> <td><span class="tag ${m.tipo === 'Ingreso' ? 'tag-i' : m.tipo === 'Egreso' ? 'tag-e' : 'tag-g'}">${m.tipo === 'GastoFijo' ? 'G.Fijo' : m.tipo}</span></td> <td class="${m.tipo === 'Ingreso' ? 'pos' : 'neg'}">${m.tipo === 'Ingreso' ? '+' : '-'}${fmt(parseFloat(m.monto))}</td> <td style="color:var(--muted); font-size: 0.75rem;">${m.usuario || 'hethea'}</td> <td>${(currentUser === 'hethea' || currentUser === 'SSHADMIN' || m.usuario === currentUser) ? `<button class="btn btn-ghost btn-s" onclick="eliminar('${m.id}')">✕</button>` : '—'}</td></tr>`).join('') : `<tr><td colspan="7"><div class="empty">Sin actividad registrada en esta selección.</div></td></tr>`;
     };
 
     window.renderAllMov = function() {
         const arr = movs.filter(m => m.mes === mesInp && m.anio === anio && (currentRol === 'admin' || currentRol === 'coadmin' || m.usuario === currentUser));
-        document.getElementById('allMovBody').innerHTML = arr.length ? arr.map(m => `<tr> <td><span class="tag" style="background:var(--surface2); color:var(--text);">${m.tienda || 'Online'}</span></td> <td>${m.cat}</td> <td><span class="tag ${m.tipo === 'Ingreso' ? 'tag-i' : m.tipo === 'Egreso' ? 'tag-e' : 'tag-g'}">${m.tipo === 'GastoFijo' ? 'G.Fijo' : m.tipo}</span></td> <td class="${m.tipo === 'Ingreso' ? 'pos' : 'neg'}">${fmt(parseFloat(m.monto))}</td> <td style="color:var(--muted);">${m.nota || '—'}</td> <td>${(currentUser === 'hethea' || currentUser === 'SSHADMIN' || m.usuario === currentUser) ? `<button class="btn btn-ghost btn-s" onclick="eliminar('${m.id}')">Anular</button>' : '—'}</td></tr>`).join('') : `<tr><td colspan="6"><div class="empty">No has registrado movimientos este mes.</div></td></tr>`;
+        document.getElementById('allMovBody').innerHTML = arr.length ? arr.map(m => `<tr> <td><span class="tag" style="background:var(--surface2); color:var(--text);">${m.tienda || 'Online'}</span></td> <td>${m.cat}</td> <td><span class="tag ${m.tipo === 'Ingreso' ? 'tag-i' : m.tipo === 'Egreso' ? 'tag-e' : 'tag-g'}">${m.tipo === 'GastoFijo' ? 'G.Fijo' : m.tipo}</span></td> <td class="${m.tipo === 'Ingreso' ? 'pos' : 'neg'}">${fmt(parseFloat(m.monto))}</td> <td style="color:var(--muted);">${m.nota || '—'}</td> <td>${(currentUser === 'hethea' || currentUser === 'SSHADMIN' || m.usuario === currentUser) ? `<button class="btn btn-ghost btn-s" onclick="eliminar('${m.id}')">Anular</button>` : '—'}</td></tr>`).join('') : `<tr><td colspan="6"><div class="empty">No has registrado movimientos este mes.</div></td></tr>`;
     };
 
     window.renderAnual = function() {
