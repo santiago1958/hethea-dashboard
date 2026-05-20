@@ -2,55 +2,47 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>HETHEA | Dashboard Administrativo</title>
+    <title>HETHEA | Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Jost:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display&family=Jost:wght@300;400&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #fdfcf9; --accent: #1a1a1a; --border: #e0dcd3; }
-        body { font-family: 'Jost', sans-serif; background: var(--bg); margin: 0; color: #333; }
-        
-        /* Login centrado y elegante */
-        #loginScreen { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--bg); z-index: 1000; }
-        .login-box { width: 320px; text-align: center; }
-        .login-box img { width: 120px; margin-bottom: 20px; }
-        .input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid var(--border); background: transparent; outline: none; }
-        .btn { width: 100%; padding: 12px; background: var(--accent); color: #fff; border: none; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; font-size: 0.8rem; }
-
-        /* Dashboard */
-        header { padding: 30px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
-        .dashboard-content { padding: 40px 5%; }
-        .card { background: #fff; border: 1px solid var(--border); padding: 30px; margin-bottom: 30px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th { border-bottom: 2px solid var(--accent); padding: 15px; text-align: left; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 1px; }
-        td { padding: 15px; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
+        body { font-family: 'Jost', sans-serif; background: #fdfcf9; margin: 0; }
+        header { padding: 40px 5%; display: flex; justify-content: space-between; border-bottom: 1px solid #e0dcd3; }
+        .main-container { padding: 40px 5%; display: grid; grid-template-columns: 350px 1fr; gap: 40px; }
+        .card { background: #fff; border: 1px solid #e0dcd3; padding: 25px; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 15px; border-bottom: 1px solid #eee; text-align: left; }
+        .btn { padding: 12px 20px; background: #1a1a1a; color: #fff; border: none; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div id="loginScreen">
-    <div class="login-box">
-        <img src="Hethea.PNG" alt="HETHEA">
-        <input id="loginUser" class="input" placeholder="USUARIO">
-        <input id="loginPass" type="password" class="input" placeholder="CONTRASEÑA">
-        <button class="btn" onclick="doLogin()">Entrar</button>
+<div id="loginScreen" style="position:fixed; inset:0; background:#fdfcf9; z-index:9999; display:flex; align-items:center; justify-content:center;">
+    <div style="width:300px; text-align:center;">
+        <img src="Hethea.PNG" style="width:120px; margin-bottom:20px;">
+        <input id="loginUser" class="card" placeholder="Usuario" style="width:100%; border:1px solid #ccc; padding:10px;"><br>
+        <input id="loginPass" type="password" class="card" placeholder="Contraseña" style="width:100%; border:1px solid #ccc; padding:10px;"><br>
+        <button class="btn" style="width:100%" onclick="doLogin()">ACCEDER</button>
     </div>
 </div>
 
 <header>
-    <h2 style="font-family: 'Playfair Display'; margin: 0;">HETHEA</h2>
-    <button class="btn" style="width: auto;" onclick="location.reload()">Cerrar Sesión</button>
+    <h2 style="font-family: 'Playfair Display';">HETHEA Dashboard</h2>
+    <button class="btn" onclick="location.reload()">Cerrar Sesión</button>
 </header>
 
-<div class="dashboard-content">
-    <div class="card">
-        <h3>Importar Ventas Masivas</h3>
-        <input type="file" id="excelFile" accept=".xlsx">
-        <button class="btn" style="width: auto;" onclick="processExcel()">Procesar Archivo</button>
+<div class="main-container">
+    <div>
+        <div class="card">
+            <h3>Carga Masiva</h3>
+            <input type="file" id="excelFile" accept=".xlsx" style="margin-bottom:15px;">
+            <button class="btn" onclick="processExcel()">Procesar Excel</button>
+        </div>
     </div>
 
     <div class="card">
-        <h3>Historial de Ventas</h3>
+        <h3>Historial de Movimientos</h3>
         <table id="movTable">
             <thead><tr><th>Fecha</th><th>Pedido #</th><th>Monto</th><th>Autor</th></tr></thead>
             <tbody id="movBody"></tbody>
@@ -59,21 +51,25 @@
 </div>
 
 <script>
-    // TUS DATOS DE SUPABASE (Copiados de tu imagen)
-    const sb = supabase.createClient(
-        'https://dudxikgqfayjmqzuvzmi.supabase.co', 
-        'sb_publishable_ZynZ0LuoT1UwEbPSPjABQ_T8tL1...' 
-    );
+    const sb = supabase.createClient('https://dudxikgqfayjmqzuvzmi.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR1ZHhpa2dxZmF5am1xenV2em1pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5NzA0NzksImV4cCI6MjA2NDU0NjQ3OX0.lW1h716L4zJb5zR5h9kGjL2e-F7kM9n8Jq6sR2t3u4v');
 
     async function doLogin() {
-        const u = document.getElementById('loginUser').value;
-        const p = document.getElementById('loginPass').value;
-        if (u === 'SSHADMIN' && p === 'Bancol125*') {
+        if (document.getElementById('loginUser').value === 'SSHADMIN' && document.getElementById('loginPass').value === 'Bancol125*') {
             sessionStorage.setItem('auth', '1');
-            sessionStorage.setItem('user', u);
-            document.getElementById('loginScreen').style.display = 'none';
-            renderMovs();
-        } else { alert('Acceso denegado'); }
+            location.reload();
+        } else { alert('Credenciales incorrectas'); }
+    }
+
+    async function renderMovs() {
+        const { data, error } = await sb.from('movimientos').select('*');
+        if(error) { console.error(error); return; }
+        document.getElementById('movBody').innerHTML = data.map(m => `
+            <tr>
+                <td>${new Date(m.created_at).toLocaleDateString()}</td>
+                <td>${m.pedido_id}</td>
+                <td>$${m.monto}</td>
+                <td>${m.usuario || 'Admin'}</td>
+            </tr>`).join('');
     }
 
     async function processExcel() {
@@ -95,19 +91,8 @@
         reader.readAsBinaryString(file);
     }
 
-    async function renderMovs() {
-        const { data } = await sb.from('movimientos').select('*');
-        document.getElementById('movBody').innerHTML = data.map(m => `
-            <tr>
-                <td>${new Date(m.created_at).toLocaleDateString()}</td>
-                <td>${m.pedido_id}</td>
-                <td>$${m.monto.toLocaleString()}</td>
-                <td>${m.usuario}</td>
-            </tr>`).join('');
-    }
-
-    if(sessionStorage.getItem('auth')) { 
-        document.getElementById('loginScreen').style.display = 'none'; 
+    if(sessionStorage.getItem('auth')) {
+        document.getElementById('loginScreen').style.display = 'none';
         renderMovs();
     }
 </script>
