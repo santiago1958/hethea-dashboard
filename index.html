@@ -126,10 +126,7 @@ tr:hover td{background:var(--surface2)}
 .empty-icon{font-size:2rem;margin-bottom:8px;opacity:.4}
 .loading-row td{text-align:center;padding:24px;color:var(--muted)}
 
-@media(max-width:900px){.kpis,.grid3,.input-grid{grid-template-columns:1fr 1fr}main{padding:16px 16px 110px}}
-@media(max-width:600px){.kpis,.grid3,.input-grid{grid-template-columns:1fr}}
-</style>
-<style id="loginStyles">
+/* LOGIN STYLES */
 #loginScreen{position:fixed;inset:0;background:#07101f;z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px}
 #loginScreen.hidden{display:none}
 .login-box{background:#0f1f35;border:1px solid #1d3352;border-radius:24px;padding:48px 40px;max-width:420px;width:100%;text-align:center;position:relative;overflow:hidden}
@@ -150,6 +147,9 @@ tr:hover td{background:var(--surface2)}
 .shake{animation:loginShake .4s ease}
 @keyframes fadeOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(1.02)}}
 .fade-out{animation:fadeOut .4s ease forwards}
+
+@media(max-width:900px){.kpis,.grid3,.input-grid{grid-template-columns:1fr 1fr}main{padding:16px 16px 110px}}
+@media(max-width:600px){.kpis,.grid3,.input-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -174,7 +174,6 @@ tr:hover td{background:var(--surface2)}
   </div>
 </div>
 
-
 <div id="statusBar" class="loading"></div>
 
 <header>
@@ -190,6 +189,7 @@ tr:hover td{background:var(--surface2)}
     <select id="yearSelect" class="year-sel" onchange="cambiarAnio(this.value)">
       <option>2023</option><option>2024</option><option selected>2025</option><option>2026</option>
     </select>
+    <button class="btn btn-ghost btn-s" onclick="cerrarSesion()" title="Cerrar sesión">Salir</button>
   </div>
 </header>
 
@@ -198,6 +198,7 @@ tr:hover td{background:var(--surface2)}
     <button class="tab active" onclick="showTab('resumen',this)">Resumen</button>
     <button class="tab" onclick="showTab('ingresar',this)">Ingresar datos</button>
     <button class="tab" onclick="showTab('anual',this)">Vista anual</button>
+    <button class="tab" id="tabBtnUsuarios" style="display:none" onclick="showTab('usuarios',this)">👥 Usuarios</button>
   </div>
 
   <!-- RESUMEN -->
@@ -278,6 +279,33 @@ tr:hover td{background:var(--surface2)}
       <canvas id="lineChart" style="max-height:280px"></canvas>
     </div>
   </div>
+
+  <!-- USUARIOS -->
+  <div id="tab-usuarios" style="display:none">
+    <div class="grid3">
+      <div class="card" style="height:fit-content">
+        <div class="sec-hdr"><span>👥 Añadir nuevo usuario</span></div>
+        <div class="field"><label>Nombre de usuario</label>
+          <input type="text" id="nuUser" placeholder="Ej: meli"></div>
+        <div class="field"><label>Contraseña</label>
+          <input type="password" id="nuPass" placeholder="Mínimo 6 caracteres"></div>
+        <div class="field"><label>Rol</label>
+          <select id="nuRol">
+            <option value="usuario">Usuario estándar (Acceso a datos)</option>
+            <option value="admin">Administrador (Control total)</option>
+          </select>
+        </div>
+        <button class="btn btn-p" style="width:100%;margin-top:10px" onclick="crearUsuario()">+ Crear usuario</button>
+      </div>
+      <div class="card" style="grid-column: span 2;">
+        <div class="sec-hdr"><span>📋 Usuarios registrados</span></div>
+        <table>
+          <thead><tr><th>Usuario</th><th>Rol</th><th>Fecha creación</th><th>Acciones</th></tr></thead>
+          <tbody id="usuariosBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </main>
 
 <!-- TOOLBAR -->
@@ -289,7 +317,7 @@ tr:hover td{background:var(--surface2)}
 <div class="modal-overlay" id="pwModal">
   <div class="modal-box">
     <h2 style="color:var(--danger)">🔒 Confirmar eliminación</h2>
-    <p>Para eliminar este movimiento ingresa la contraseña de seguridad.</p>
+    <p>Para eliminar este movimiento ingresa tu contraseña de seguridad.</p>
     <input class="pw-input" type="password" id="pwInput" placeholder="••••••••••" onkeydown="if(event.key==='Enter')confirmarEliminar()">
     <div class="pw-error" id="pwError">❌ Contraseña incorrecta</div>
     <div style="display:flex;gap:10px">
@@ -339,13 +367,115 @@ async function hashStr(str) {
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 
-// ── INIT ──
+// ── INIT APP ──
 window.addEventListener('DOMContentLoaded', ()=>{
   buildMesSel('msRes', ()=>mesRes, v=>{ mesRes=v; verTodo=false; syncMesSel('msInp',v); document.getElementById('btnTodo').classList.remove('active'); renderResumen(); });
   buildMesSel('msInp', ()=>mesInp, v=>{ mesInp=v; mesRes=v; verTodo=false; syncMesSel('msRes',v); document.getElementById('btnTodo').classList.remove('active'); renderResumen(); renderAllMov(); });
+  checkAuth();
+});
+
+function initApp() {
+  const rol = sessionStorage.getItem('hethea_rol');
+  if(rol === 'admin') {
+     document.getElementById('tabBtnUsuarios').style.display = 'inline-block';
+     cargarUsuariosList();
+  }
   cargarDatos();
   suscribirRealtime();
-});
+}
+
+function cerrarSesion() {
+  sessionStorage.removeItem('hethea_auth');
+  sessionStorage.removeItem('hethea_rol');
+  sessionStorage.removeItem('hethea_user');
+  location.reload();
+}
+
+// ── GESTIÓN DE USUARIOS (PANEL ADMIN) ──
+async function cargarUsuariosList() {
+  const { data, error } = await sb.from('usuarios').select('*').order('created_at', {ascending:false});
+  if(data) {
+     document.getElementById('usuariosBody').innerHTML = data.map(u => `
+      <tr>
+        <td style="font-weight:700;color:var(--text)">${u.usuario} ${u.usuario==='hethea'?'<span class="tag tag-i" style="margin-left:5px">Principal</span>':''}</td>
+        <td><span class="tag ${u.rol==='admin'?'tag-g':'tag-i'}">${u.rol.toUpperCase()}</span></td>
+        <td style="color:var(--muted);font-size:0.75rem">${new Date(u.created_at).toLocaleDateString('es-CO')}</td>
+        <td>
+           ${u.usuario !== 'hethea' ? `<button class="btn btn-d btn-s" onclick="borrarUsuario('${u.id}')">Eliminar</button>` : '—'}
+        </td>
+      </tr>
+     `).join('');
+  }
+}
+
+async function crearUsuario() {
+  const u = document.getElementById('nuUser').value.trim();
+  const p = document.getElementById('nuPass').value;
+  const r = document.getElementById('nuRol').value;
+  if(!u || p.length < 6) { toast('Usuario inválido o clave muy corta (mínimo 6)','er'); return; }
+
+  const hash = await hashStr(p);
+  const { error } = await sb.from('usuarios').insert({ usuario: u, password_hash: hash, rol: r });
+  if(error) {
+     if(error.code === '23505') toast('Ese usuario ya existe', 'er');
+     else toast('Error: '+error.message, 'er');
+     return;
+  }
+  toast('✓ Usuario creado exitosamente');
+  document.getElementById('nuUser').value = '';
+  document.getElementById('nuPass').value = '';
+  cargarUsuariosList();
+}
+
+async function borrarUsuario(id) {
+  if(!confirm('¿Seguro que deseas eliminar este usuario definitivamente?')) return;
+  const { error } = await sb.from('usuarios').delete().eq('id', id);
+  if(error) toast('Error: '+error.message, 'er');
+  else {
+     toast('✓ Usuario eliminado');
+     cargarUsuariosList();
+  }
+}
+
+// ── LOGIN ──
+async function doLogin() {
+  const user = document.getElementById('loginUser').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  if(!user || !pass) return;
+  
+  const passHash = await hashStr(pass);
+  const { data, error } = await sb.from('usuarios').select('*').eq('usuario', user).single();
+
+  // Fallback de seguridad: si algo falla en la base de datos, tu cuenta original siempre entra.
+  const isMasterFallback = (user === 'hethea' && pass === 'hethea2025sd');
+
+  if (isMasterFallback || (data && data.password_hash === passHash)) {
+    const rol = isMasterFallback ? 'admin' : data.rol;
+    sessionStorage.setItem('hethea_auth', '1');
+    sessionStorage.setItem('hethea_rol', rol);
+    sessionStorage.setItem('hethea_user', user);
+    
+    const box = document.getElementById('loginBox');
+    box.classList.add('fade-out');
+    setTimeout(()=>{ 
+      document.getElementById('loginScreen').classList.add('hidden'); 
+      initApp();
+    }, 400);
+  } else {
+    const box = document.getElementById('loginBox');
+    document.getElementById('loginError').style.display = 'block';
+    box.classList.add('shake');
+    setTimeout(()=>box.classList.remove('shake'), 400);
+    document.getElementById('loginPass').value = '';
+  }
+}
+
+function checkAuth() {
+  if (sessionStorage.getItem('hethea_auth') === '1') {
+    document.getElementById('loginScreen').classList.add('hidden');
+    initApp();
+  }
+}
 
 // ── CARGAR DATOS ──
 async function cargarDatos() {
@@ -424,7 +554,7 @@ window.agregar = async function(tipo) {
   if(tipo==='GastoFijo'){document.getElementById('mtoG').value='';document.getElementById('ntaG').value='';}
 };
 
-// ── ELIMINAR CON CONTRASEÑA ──
+// ── ELIMINAR CON CONTRASEÑA ACTUAL ──
 window.eliminar = function(id) {
   pendingDeleteId = id;
   document.getElementById('pwInput').value='';
@@ -441,18 +571,23 @@ window.cerrarPw = function() {
 window.confirmarEliminar = async function() {
   const pw = document.getElementById('pwInput').value;
   const hash = await hashStr(pw);
-  const correcto = await hashStr('hethea2025sd');
-  if(hash !== correcto) {
+  
+  // Validar contraseña del usuario activo
+  const currentUser = sessionStorage.getItem('hethea_user');
+  const { data } = await sb.from('usuarios').select('password_hash').eq('usuario', currentUser).single();
+  const masterCorrecto = await hashStr('hethea2025sd');
+
+  if((data && data.password_hash === hash) || hash === masterCorrecto) {
+    document.getElementById('pwModal').classList.remove('show');
+    const id = pendingDeleteId; pendingDeleteId=null;
+    const {error} = await sb.from('movimientos').delete().eq('id', id);
+    if(error){toast('Error: '+error.message,'er');}
+    else{toast('✓ Eliminado');}
+  } else {
     document.getElementById('pwError').style.display='block';
     document.getElementById('pwInput').value='';
     document.getElementById('pwInput').focus();
-    return;
   }
-  document.getElementById('pwModal').classList.remove('show');
-  const id = pendingDeleteId; pendingDeleteId=null;
-  const {error} = await sb.from('movimientos').delete().eq('id', id);
-  if(error){toast('Error: '+error.message,'er');}
-  else{toast('✓ Eliminado');}
 };
 
 // ── RENDER RESUMEN ──
@@ -542,7 +677,10 @@ function renderAnual() {
 }
 
 window.showTab = function(name, btn) {
-  ['resumen','ingresar','anual'].forEach(t=>{document.getElementById('tab-'+t).style.display=t===name?'block':'none';});
+  ['resumen','ingresar','anual','usuarios'].forEach(t=>{
+    const el = document.getElementById('tab-'+t);
+    if(el) el.style.display=t===name?'block':'none';
+  });
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   if(name==='anual') renderAnual();
@@ -568,38 +706,6 @@ window.exportarExcel = function() {
   XLSX.writeFile(wb,`Finanzas_${anio}.xlsx`);
   toast('✓ Excel descargado');
 };
-
-// ── LOGIN ──
-async function hashStr(str) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
-
-async function doLogin() {
-  const user = document.getElementById('loginUser').value.trim();
-  const pass = document.getElementById('loginPass').value;
-  const passHash = await hashStr(pass);
-  const correctHash = await hashStr('hethea2025sd');
-  if (user === 'hethea' && passHash === correctHash) {
-    sessionStorage.setItem('hethea_auth', '1');
-    const box = document.getElementById('loginBox');
-    box.classList.add('fade-out');
-    setTimeout(()=>{ document.getElementById('loginScreen').classList.add('hidden'); }, 400);
-  } else {
-    const box = document.getElementById('loginBox');
-    document.getElementById('loginError').style.display = 'block';
-    box.classList.add('shake');
-    setTimeout(()=>box.classList.remove('shake'), 400);
-    document.getElementById('loginPass').value = '';
-  }
-}
-
-function checkAuth() {
-  if (sessionStorage.getItem('hethea_auth') === '1') {
-    document.getElementById('loginScreen').classList.add('hidden');
-  }
-}
-checkAuth();
 
 </script>
 </body>
