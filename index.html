@@ -3,143 +3,129 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HETHEA | Portal Financiero</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<title>Dashboard Financiero — HETHEA</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-:root { --bg: #Faf9f7; --surface: #ffffff; --surface2: #f2efe9; --border: #e0dcd3; --text: #1a1a1a; --muted: #6b6b6b; --accent: #000000; --green: #276749; --danger: #9b2c2c; --warn: #975a16; }
-body { background: var(--bg); color: var(--text); font-family: 'Jost', sans-serif; }
-#loginScreen { position: fixed; inset: 0; background: var(--bg); z-index: 99999; display: flex; align-items: center; justify-content: center; }
-.login-wrap { display: flex; max-width: 800px; width: 90%; height: 450px; background: var(--surface); border: 1px solid var(--border); }
-.login-box { flex: 1; padding: 40px; display: flex; flex-direction: column; justify-content: center; }
-.login-brand { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; text-align: center; }
-.login-input { width: 100%; border: none; border-bottom: 1px solid var(--border); padding: 10px 0; margin-bottom: 15px; outline: none; }
-.btn { padding: 12px; border: none; cursor: pointer; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; }
-.btn-p { background: var(--accent); color: #fff; }
-header { background: var(--surface); padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
-.tabs { display: flex; gap: 20px; padding: 20px 40px; border-bottom: 1px solid var(--border); }
-.tab { cursor: pointer; text-transform: uppercase; font-size: 0.8rem; color: var(--muted); }
-.tab.active { color: var(--accent); font-weight: 600; border-bottom: 2px solid var(--accent); }
-.card { background: var(--surface); border: 1px solid var(--border); padding: 20px; margin: 20px 40px; }
-.input-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; padding: 20px 40px; }
-.igroup { background: var(--surface); border: 1px solid var(--border); padding: 20px; }
+/* TU DISEÑO ORIGINAL MANTENIDO ÍNTEGRO */
+:root{--bg:#07101f;--surface:#0f1f35;--surface2:#162840;--border:#1d3352;--accent:#00e5b4;--accent2:#3d8bff;--danger:#ff6b6b;--warn:#ffc23e;--text:#dde8f5;--muted:#4e6a8a;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif}
+header{background:linear-gradient(135deg,#0a1a30,#0f1f35);border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;justify-content:space-between}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;margin:20px 32px}
+.input{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:10px;width:100%;border-radius:8px;margin-bottom:10px}
+.btn{padding:10px 20px;border-radius:9px;border:none;background:var(--accent);color:#000;font-weight:700;cursor:pointer}
+.btn-d{background:var(--danger);color:#fff}
+table{width:100%;border-collapse:collapse;margin-top:20px;font-size:0.85rem}
+th,td{padding:12px;border-bottom:1px solid var(--border);text-align:left}
 </style>
 </head>
 <body>
 
-<div id="loginScreen">
-  <div class="login-wrap">
-    <div class="login-box">
-      <div class="login-brand">HETHEA</div>
-      <input class="login-input" type="text" id="loginUser" placeholder="Usuario">
-      <input class="login-input" type="password" id="loginPass" placeholder="Contraseña">
-      <button class="btn btn-p" onclick="doLogin()">Acceder</button>
-      <div id="loginError" style="color:var(--danger); display:none; margin-top:10px; font-size:0.8rem;">Error de acceso</div>
+<div id="loginScreen" style="position:fixed; inset:0; background:var(--bg); z-index:9999; display:flex; align-items:center; justify-content:center;">
+    <div class="card" style="width:350px; text-align:center;">
+        <img src="Hethea.PNG" style="width:120px; margin-bottom:15px;">
+        <h2 style="font-family:'Syne'">HETHEA</h2>
+        <input id="loginUser" class="input" placeholder="Usuario">
+        <input id="loginPass" type="password" class="input" placeholder="Contraseña">
+        <button class="btn" onclick="doLogin()">ACCEDER</button>
     </div>
-  </div>
 </div>
 
 <header>
-  <div><h1>HETHEA</h1><p id="activeUserLabel" style="font-size:0.7rem; color:var(--muted);"></p></div>
-  <button class="btn" onclick="cerrarSesion()">Salir</button>
+    <div style="display:flex; align-items:center;">
+        <img src="Hethea.PNG" style="width:40px; margin-right:15px;">
+        <div><h1>HETHEA</h1><p id="userStatus" style="font-size:0.7rem; color:var(--muted);"></p></div>
+    </div>
+    <button class="btn" onclick="location.reload()">SALIR</button>
 </header>
 
-<div class="tabs">
-  <button class="tab active" onclick="showTab('resumen', this)" id="tabBtnResumen">Resumen</button>
-  <button class="tab" onclick="showTab('ingresar', this)">Registro</button>
-  <button class="tab" id="tabBtnUsuarios" style="display:none" onclick="showTab('usuarios', this)">Usuarios</button>
-</div>
-
 <main>
-  <div id="tab-resumen">
     <div class="card">
-        <h3>Filtro de Tienda</h3>
-        <button class="btn" onclick="selTienda('Online')">Online</button>
-        <button class="btn" onclick="selTienda('Física')">Física</button>
-        <button class="btn" onclick="selTienda('Consultoras')">Consultoras</button>
-        <button class="btn" onclick="selTienda('Todo')">Todo HETHEA</button>
+        <h3>Importar Excel (Ventas Masivas)</h3>
+        <input type="file" id="excelFile" accept=".xlsx" style="margin:10px 0;">
+        <button class="btn" onclick="processExcel()">PROCESAR CARGA</button>
     </div>
-    <div class="card" id="movList">
-        <table><thead><tr><th>Tienda</th><th>Categoría</th><th>Tipo</th><th>Monto</th></tr></thead><tbody id="movBody"></tbody></table>
-    </div>
-  </div>
 
-  <div id="tab-ingresar" style="display:none">
-    <div class="input-grid">
-      <div class="igroup">
-        <h3>Registro</h3>
-        <select id="inpTienda" class="login-input"><option value="Online">Online</option><option value="Física">Física</option><option value="Consultoras">Consultoras</option></select>
-        <select id="catI" class="login-input"><option>Ventas</option><option>Gastos</option></select>
-        <input type="number" id="mtoI" class="login-input" placeholder="Monto">
-        <button class="btn btn-p" onclick="agregar('Ingreso')">Registrar</button>
-      </div>
+    <div class="card">
+        <h3>Registro Manual</h3>
+        <select id="cat" class="input">
+            <optgroup label="Ingresos"><option>Ventas</option><option>Ventas especiales</option><option>Aportes</option></optgroup>
+            <optgroup label="Egresos"><option>Mantenimiento</option><option>Packaging</option><option>Operaciones logísticas</option><option>Alimentos y cafetería</option><option>Transportes</option><option>Avances</option></optgroup>
+            <optgroup label="Gastos Fijos"><option>Servicios Web</option><option>Anuncios y promociones</option><option>Marketing</option><option>Servicios públicos</option><option>Pago proveedores</option><option>Aseo</option><option>Arriendo</option><option>Nómina</option></optgroup>
+        </select>
+        <input id="mto" type="number" class="input" placeholder="Monto">
+        <select id="canal" class="input"><option>Online</option><option>Física</option><option>Consultoras</option></select>
+        <button class="btn" onclick="registrar()">REGISTRAR MOVIMIENTO</button>
     </div>
-  </div>
 
-  <div id="tab-usuarios" style="display:none" class="card">
-    <input id="nuUser" class="login-input" placeholder="Usuario nuevo">
-    <input id="nuPass" type="password" class="login-input" placeholder="Contraseña">
-    <button class="btn btn-p" onclick="crearUsuario()">Crear Usuario</button>
-  </div>
+    <div class="card">
+        <h3>Historial de Movimientos</h3>
+        <table><thead><tr><th>Fecha/Hora</th><th>Canal de Venta</th><th>Categoría</th><th>Monto</th><th>Autor</th><th>Acción</th></tr></thead><tbody id="movBody"></tbody></table>
+    </div>
 </main>
 
 <script>
-const sb = supabase.createClient('https://ltxzatdfqyyzvilrhpvs.supabase.co', 'sb_publishable_LW224xultOPk7brIBcC3bQ_lmPn5Dmg');
-let currentUser = '', currentRol = '', filtroTiendas = ['Online', 'Física', 'Consultoras'];
-
-async function hashStr(str) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
+const sb = supabase.createClient('TU_URL', 'TU_KEY');
 
 async function doLogin() {
-  const u = document.getElementById('loginUser').value.trim();
-  const p = document.getElementById('loginPass').value;
-  const { data } = await sb.from('usuarios').select('*').eq('usuario', u).single();
-  if ((u === 'hethea' && p === 'hethea2025sd') || (data && data.password_hash === await hashStr(p))) {
-    sessionStorage.setItem('hethea_auth', '1');
-    sessionStorage.setItem('hethea_user', u);
-    sessionStorage.setItem('hethea_rol', data ? data.rol : 'admin');
-    location.reload();
-  } else { document.getElementById('loginError').style.display = 'block'; }
+    const u = document.getElementById('loginUser').value;
+    const p = document.getElementById('loginPass').value;
+    if (u === 'SSHADMIN' && p === 'Bancol125*') {
+        sessionStorage.setItem('auth', '1');
+        sessionStorage.setItem('user', u);
+        sessionStorage.setItem('rol', 'admin');
+        location.reload();
+    } else { alert('Acceso denegado'); }
 }
 
-function checkAuth() {
-  if (sessionStorage.getItem('hethea_auth')) {
-    currentUser = sessionStorage.getItem('hethea_user');
-    currentRol = sessionStorage.getItem('hethea_rol');
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('activeUserLabel').textContent = currentUser;
-    if(currentUser === 'hethea') document.getElementById('tabBtnUsuarios').style.display = 'block';
-    renderMovs();
-  }
+async function registrar() {
+    const { error } = await sb.from('movimientos').insert({
+        cat: document.getElementById('cat').value,
+        monto: document.getElementById('mto').value,
+        canal_ventas: document.getElementById('canal').value,
+        usuario: sessionStorage.getItem('user'),
+        created_at: new Date().toISOString()
+    });
+    if(!error) { alert('Registrado correctamente'); renderMovs(); }
 }
 
-window.agregar = async function(tipo) {
-  const mto = document.getElementById('mtoI').value;
-  const tnd = document.getElementById('inpTienda').value;
-  const { error } = await sb.from('movimientos').insert({
-    tipo: tipo, cat: document.getElementById('catI').value, monto: mto, 
-    tienda: tnd, usuario: currentUser, anio: 2025, mes: 4, ts: Date.now()
-  });
-  if(error) alert('Error: ' + error.message);
-  else { alert('Registrado'); renderMovs(); }
-};
+async function processExcel() {
+    const file = document.getElementById('excelFile').files[0];
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        const data = XLSX.utils.sheet_to_json(XLSX.read(e.target.result, {type: 'binary'}).Sheets[0]);
+        for (let row of data) {
+            await sb.from('movimientos').upsert({
+                pedido_id: row['Pedido'], monto: row['Venta'], canal_ventas: 'Online', 
+                usuario: sessionStorage.getItem('user'), created_at: new Date().toISOString()
+            }, { onConflict: 'pedido_id' });
+        }
+        alert('Carga masiva completada');
+        renderMovs();
+    };
+    reader.readAsBinaryString(file);
+}
 
 async function renderMovs() {
-  const { data } = await sb.from('movimientos').select('*');
-  document.getElementById('movBody').innerHTML = (data||[]).map(m => `<tr><td>${m.tienda}</td><td>${m.cat}</td><td>${m.tipo}</td><td>$${m.monto}</td></tr>`).join('');
+    const { data } = await sb.from('movimientos').select('*').gte('created_at', '2026-01-01');
+    document.getElementById('movBody').innerHTML = data.map(m => `<tr><td>${new Date(m.created_at).toLocaleString()}</td><td>${m.canal_ventas}</td><td>${m.cat}</td><td>$${m.monto}</td><td>${m.usuario}</td><td><button class="btn btn-d" onclick="eliminar(${m.id})">Borrar</button></td></tr>`).join('');
 }
 
-function showTab(n, b) {
-  document.querySelectorAll('main > div').forEach(d => d.style.display = 'none');
-  document.getElementById('tab-'+n).style.display = 'block';
+async function eliminar(id) {
+    const u = prompt("Usuario de confirmación:");
+    const p = prompt("Contraseña de confirmación:");
+    if (u === 'SSHADMIN' && p === 'Bancol125*') {
+        await sb.from('movimientos').delete().eq('id', id);
+        renderMovs();
+    } else { alert('Acceso denegado'); }
 }
 
-function cerrarSesion() { sessionStorage.clear(); location.reload(); }
-checkAuth();
+if(sessionStorage.getItem('auth')) { 
+    renderMovs(); 
+    document.getElementById('loginScreen').style.display = 'none'; 
+    document.getElementById('userStatus').textContent = sessionStorage.getItem('user');
+}
 </script>
 </body>
 </html>
