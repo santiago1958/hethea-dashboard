@@ -9,19 +9,19 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-    /* PALETA DE COLORES */
+    /* PALETA DE COLORES INSPIRADA EN HETHEA */
     :root {
-        --bg: #Faf9f7; 
-        --surface: #ffffff;
-        --surface2: #f2efe9;
-        --border: #e0dcd3;
-        --text: #1a1a1a;
-        --muted: #6b6b6b;
-        --accent: #000000;
-        --rhodium: #8a8d91;
-        --green: #276749;
-        --danger: #9b2c2c;
-        --warn: #975a16;
+      --bg: #Faf9f7; 
+      --surface: #ffffff;
+      --surface2: #f2efe9;
+      --border: #e0dcd3;
+      --text: #1a1a1a;
+      --muted: #6b6b6b;
+      --accent: #000000;
+      --rhodium: #8a8d91;
+      --green: #276749;
+      --danger: #9b2c2c;
+      --warn: #975a16;
     }
 
     /* ESTILOS DE LOGO */
@@ -73,8 +73,8 @@
     .kpi-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
     .kpi-value { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 500; color: var(--accent); margin-bottom: 4px; }
     .kpi.ing .kpi-value { color: var(--green); }
-    .kpi.eg .kpi-value { color: var(--danger); }
-    .kpi.gf .kpi-value { color: var(--warn); }
+    .kpi.eg  .kpi-value { color: var(--danger); }
+    .kpi.gf  .kpi-value { color: var(--warn); }
     .kpi-sub { font-size: 0.75rem; color: var(--muted); }
 
     /* TARJETAS Y TABLAS */
@@ -141,6 +141,7 @@
 
     /* LOGIN SCREEN HETHEA */
     #loginScreen { position: fixed; inset: 0; background: var(--bg); z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    #loginScreen.hidden { display: none; }
     .login-wrap { display: flex; max-width: 900px; width: 100%; height: 500px; background: var(--surface); box-shadow: 0 20px 50px rgba(0,0,0,0.05); border: 1px solid var(--border); }
     .login-image { flex: 1; background: url('https://images.unsplash.com/photo-1601121141461-9d6647bca1ed?auto=format&fit=crop&w=800&q=80') center/cover; position: relative; }
     .login-image::after { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,0.1); }
@@ -157,13 +158,16 @@
     .login-error { color: var(--danger); font-size: 0.75rem; margin-top: 15px; display: none; text-align: center; }
     .eye-btn { position: absolute; right: 0; bottom: 8px; border: none; background: transparent; color: var(--muted); cursor: pointer; font-size: 0.7rem; }
 
-    @media(max-width:900px){.login-image{display:none;}}
+    .empty { text-align: center; padding: 40px; color: var(--muted); font-size: 0.85rem; font-family: 'Playfair Display', serif; font-style: italic; }
+
+    @media(max-width:900px){.kpis,.grid3,.input-grid{grid-template-columns:1fr 1fr} main{padding:20px} .login-image{display:none;}}
+    @media(max-width:600px){.kpis,.grid3,.input-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 
 <div id="loginScreen">
-  <div class="login-wrap">
+  <div class="login-wrap" id="loginBox">
     <div class="login-image"></div>
     <div class="login-box">
       <div class="login-brand">
@@ -232,6 +236,7 @@
         <div class="mes-sel" id="msRes"></div>
       </div>
     </div>
+
     <div class="kpis" id="kpis"></div>
     <div class="grid3">
       <div class="card">
@@ -268,6 +273,7 @@
         </select>
       </div>
     </div>
+
     <div class="input-grid" id="inputGridSection">
       <div class="igroup">
         <h3>Ingreso</h3>
@@ -355,10 +361,11 @@
     </div>
   </div>
 </div>
+
 <div id="toast"></div>
 
 <script>
-    // Configuración de Supabase
+    // ── SUPABASE CONFIG ──
     const SUPABASE_URL = 'https://ltxzatdfqyyzvilrhpvs.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_LW224xultOPk7brIBcC3bQ_lmPn5Dmg';
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -377,6 +384,7 @@
     let currentUser = '';
     let filtroTiendas = ['Online', 'Física', 'Consultoras'];
 
+    // ── FUNCIONES AUXILIARES ──
     function toast(msg, type='ok') {
         const t = document.getElementById('toast');
         t.textContent = msg;
@@ -388,13 +396,8 @@
     function togglePass() {
         const p = document.getElementById('loginPass');
         const b = document.getElementById('eyeBtn');
-        if (p.type === 'password') {
-            p.type = 'text';
-            b.textContent = 'OCULTAR';
-        } else {
-            p.type = 'password';
-            b.textContent = 'VER';
-        }
+        if (p.type === 'password') { p.type = 'text'; b.textContent = 'OCULTAR'; }
+        else { p.type = 'password'; b.textContent = 'VER'; }
     }
 
     function setSyncStatus(state, label) {
@@ -408,6 +411,7 @@
         return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
+    // ── INIT APP ──
     window.addEventListener('DOMContentLoaded', () => {
         buildMesSel('msRes', () => mesRes, v => { mesRes = v; verTodo = false; syncMesSel('msInp', v); document.getElementById('btnTodo').classList.remove('active'); renderResumen(); });
         buildMesSel('msInp', () => mesInp, v => { mesInp = v; mesRes = v; verTodo = false; syncMesSel('msRes', v); document.getElementById('btnTodo').classList.remove('active'); renderResumen(); renderAllMov(); });
@@ -418,7 +422,7 @@
         currentRol = sessionStorage.getItem('hethea_rol');
         currentUser = sessionStorage.getItem('hethea_user');
         document.getElementById('activeUserLabel').textContent = currentUser + ' (' + currentRol + ')';
-        
+
         if (currentUser === 'hethea' || currentUser === 'SSHADMIN') {
             document.getElementById('tabBtnUsuarios').style.display = 'inline-block';
             document.getElementById('toolbarExcel').style.display = 'block';
@@ -436,11 +440,9 @@
         suscribirRealtime();
     }
 
-    function cerrarSesion() {
-        sessionStorage.clear();
-        location.reload();
-    }
+    function cerrarSesion() { sessionStorage.clear(); location.reload(); }
 
+    // ── GESTIÓN USUARIOS ──
     async function cargarUsuariosList() {
         const { data } = await sb.from('usuarios').select('*').order('created_at', { ascending: false });
         if (data) {
@@ -449,7 +451,7 @@
                     <td style="font-weight:600;">${u.usuario} ${u.usuario === 'hethea' || u.usuario === 'SSHADMIN' ? '<span class="tag tag-i" style="margin-left:5px">Principal</span>' : ''}</td>
                     <td><span class="tag ${u.rol === 'admin' ? 'tag-g' : u.rol === 'coadmin' ? 'tag-i' : 'tag-e'}">${u.rol}</span></td>
                     <td style="color:var(--muted);">${new Date(u.created_at).toLocaleDateString('es-CO')}</td>
-                    <td>${u.usuario !== 'hethea' && u.usuario !== 'SSHADMIN' ? `<button class="btn btn-ghost btn-s" style="color:var(--danger)" onclick="borrarUsuario('${u.id}')">Remover</button>` : '—'}</td>
+                    <td>${u.usuario !== 'hethea' && u.usuario !== 'SSHADMIN' ? `<button class="btn btn-ghost btn-s" style="color:var(--danger)" onclick="borrarUsuario('${u.id}')">Remover</button>' : '—'}</td>
                 </tr>
             `).join('');
         }
@@ -459,7 +461,7 @@
         const u = document.getElementById('nuUser').value.trim();
         const p = document.getElementById('nuPass').value;
         const r = document.getElementById('nuRol').value;
-        if (!u || p.length < 6) { toast('Datos inválidos. Mínimo 6 caracteres para contraseña.', 'er'); return; }
+        if (!u || p.length < 6) { toast('Datos inválidos. Mínimo 6 caracteres.', 'er'); return; }
         const hash = await hashStr(p);
         const { error } = await sb.from('usuarios').insert({ usuario: u, password_hash: hash, rol: r });
         if (error) { toast('Error: el usuario ya existe.', 'er'); return; }
@@ -470,12 +472,13 @@
     }
 
     async function borrarUsuario(id) {
-        if (!confirm('¿Eliminar este perfil del sistema?')) return;
+        if (!confirm('¿Eliminar perfil?')) return;
         await sb.from('usuarios').delete().eq('id', id);
         toast('Perfil removido');
         cargarUsuariosList();
     }
 
+    // ── LOGIN ──
     async function doLogin() {
         const user = document.getElementById('loginUser').value.trim();
         const pass = document.getElementById('loginPass').value;
@@ -484,9 +487,8 @@
         const { data } = await sb.from('usuarios').select('*').eq('usuario', user).single();
         const isMasterFallback = (user === 'SSHADMIN' && pass === 'Bancol125*');
         if (isMasterFallback || (data && data.password_hash === passHash)) {
-            const rol = isMasterFallback ? 'admin' : data.rol;
             sessionStorage.setItem('hethea_auth', '1');
-            sessionStorage.setItem('hethea_rol', rol);
+            sessionStorage.setItem('hethea_rol', isMasterFallback ? 'admin' : data.rol);
             sessionStorage.setItem('hethea_user', user);
             document.getElementById('loginScreen').style.display = 'none';
             initApp();
@@ -503,6 +505,7 @@
         }
     }
 
+    // ── DATOS ──
     window.selTienda = function(t) {
         if(t === 'Todo') { filtroTiendas = ['Online', 'Física', 'Consultoras']; } else {
             if(filtroTiendas.length === 3) { filtroTiendas = [t]; } else {
@@ -520,10 +523,10 @@
     };
 
     async function cargarDatos() {
-        setSyncStatus('loading', 'Sincronizando');
+        setSyncStatus('loading', 'Sincronizando...');
         const { data, error } = await sb.from('movimientos').select('*').eq('anio', anio).order('ts', { ascending: false });
-        if (error) { setSyncStatus('err', 'Error'); return; }
-        movs = currentRol === 'usuario' ? data.filter(m => m.usuario === currentUser) : (data || []);
+        if (error) { setSyncStatus('err', 'Error'); console.error(error); return; }
+        movs = (currentRol === 'usuario') ? data.filter(m => m.usuario === currentUser) : (data || []);
         setSyncStatus('live', 'En línea');
         if(currentRol !== 'usuario') { renderResumen(); renderAnual(); }
         renderAllMov();
@@ -567,19 +570,27 @@
         return { ing, eg, gf, bal: ing - eg - gf };
     }
 
+    // ── CRUD ──
     window.agregar = async function(tipo) {
         let cat, mto, nta;
         const tnd = document.getElementById('inpTienda').value;
         if(tipo === 'Ingreso') { cat = document.getElementById('catI').value; mto = parseFloat(document.getElementById('mtoI').value); nta = document.getElementById('ntaI').value; }
         if(tipo === 'Egreso') { cat = document.getElementById('catE').value; mto = parseFloat(document.getElementById('mtoE').value); nta = document.getElementById('ntaE').value; }
         if(tipo === 'GastoFijo') { cat = document.getElementById('catG').value; mto = parseFloat(document.getElementById('mtoG').value); nta = document.getElementById('ntaG').value; }
+        
         if(!mto || mto <= 0) { toast('Monto inválido', 'er'); return; }
-        const { error } = await sb.from('movimientos').insert({ anio, mes: mesInp, tipo, cat, monto: mto, nota: nta || '', ts: Date.now(), usuario: currentUser, tienda: tnd });
-        if(error) { toast('Error al registrar', 'er'); return; }
-        toast('Registro exitoso');
-        if(tipo === 'Ingreso') { document.getElementById('mtoI').value = ''; document.getElementById('ntaI').value = ''; }
-        if(tipo === 'Egreso') { document.getElementById('mtoE').value = ''; document.getElementById('ntaE').value = ''; }
-        if(tipo === 'GastoFijo') { document.getElementById('mtoG').value = ''; document.getElementById('ntaG').value = ''; }
+
+        try {
+            const { error } = await sb.from('movimientos').insert({ anio, mes: mesInp, tipo, cat, monto: mto, nota: nta || '', ts: Date.now(), usuario: currentUser, tienda: tnd });
+            if(error) throw error;
+            toast('Registro exitoso');
+            if(tipo === 'Ingreso') { document.getElementById('mtoI').value = ''; document.getElementById('ntaI').value = ''; }
+            if(tipo === 'Egreso') { document.getElementById('mtoE').value = ''; document.getElementById('ntaE').value = ''; }
+            if(tipo === 'GastoFijo') { document.getElementById('mtoG').value = ''; document.getElementById('ntaG').value = ''; }
+        } catch(e) {
+            console.error("Error al registrar en Supabase:", e);
+            toast('Error al registrar: ' + e.message, 'er');
+        }
     };
 
     window.eliminar = function(id) {
@@ -587,7 +598,6 @@
         document.getElementById('pwInput').value = '';
         document.getElementById('pwError').style.display = 'none';
         document.getElementById('pwModal').classList.add('show');
-        setTimeout(() => document.getElementById('pwInput').focus(), 100);
     };
     window.cerrarPw = function() { pendingDeleteId = null; document.getElementById('pwModal').classList.remove('show'); };
     window.confirmarEliminar = async function() {
@@ -596,17 +606,15 @@
         const { data } = await sb.from('usuarios').select('password_hash').eq('usuario', currentUser).single();
         const masterCorrecto = await hashStr('Bancol125*');
         if ((data && data.password_hash === hash) || hash === masterCorrecto) {
+            await sb.from('movimientos').delete().eq('id', pendingDeleteId);
             document.getElementById('pwModal').classList.remove('show');
-            const id = pendingDeleteId; pendingDeleteId = null;
-            await sb.from('movimientos').delete().eq('id', id);
             toast('Registro anulado');
         } else {
             document.getElementById('pwError').style.display = 'block';
-            document.getElementById('pwInput').value = '';
-            document.getElementById('pwInput').focus();
         }
     };
 
+    // ── RENDERERS ──
     window.renderResumen = function() {
         if(currentRol === 'usuario') return;
         const lbl = verTodo ? `Todo ${anio}` : MESES_F[mesRes];
@@ -614,6 +622,8 @@
         document.getElementById('chartLbl').textContent = lbl + " | " + tiendasLbl;
         const { ing, eg, gf, bal } = verTodo ? totAnio() : totMes(mesRes);
         document.getElementById('kpis').innerHTML = ` <div class="kpi ing"><div class="kpi-label">Ingresos Brutos</div><div class="kpi-value">${fmt(ing)}</div><div class="kpi-sub">${lbl}</div></div> <div class="kpi eg"><div class="kpi-label">Egresos Operativos</div><div class="kpi-value">${fmt(eg)}</div><div class="kpi-sub">${lbl}</div></div> <div class="kpi gf"><div class="kpi-label">Gastos Estructurales</div><div class="kpi-value">${fmt(gf)}</div><div class="kpi-sub">${lbl}</div></div> <div class="kpi bal" style="border-bottom: 3px solid ${bal >= 0 ? 'var(--green)' : 'var(--danger)'}"><div class="kpi-label">Balance Neto</div><div class="kpi-value ${bal < 0 ? 'neg' : ''}">${fmt(bal)}</div><div class="kpi-sub">Rentabilidad del periodo</div></div>`;
+        
+        // ... (Charts logic kept as original)
         const d12 = MESES.map((_, i) => totMes(i));
         if(barInst) barInst.destroy();
         barInst = new Chart(document.getElementById('barChart'), {
@@ -621,6 +631,7 @@
             data: { labels: MESES, datasets: [{ label: 'Ingresos', data: d12.map(d => d.ing), backgroundColor: '#276749' }, { label: 'Egresos', data: d12.map(d => d.eg), backgroundColor: '#9b2c2c' }, { label: 'G. Fijos', data: d12.map(d => d.gf), backgroundColor: '#975a16' }] },
             options: { responsive: true, plugins: { legend: { labels: { font: { family: 'Jost' } } } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#f2efe9' } } } }
         });
+        
         const cats = {};
         const filtro = verTodo ? movs.filter(m => m.anio === anio && m.tipo !== 'Ingreso' && filtroTiendas.includes(m.tienda || 'Online')) : movs.filter(m => m.mes === mesRes && m.anio === anio && m.tipo !== 'Ingreso' && filtroTiendas.includes(m.tienda || 'Online'));
         filtro.forEach(m => { cats[m.cat] = (cats[m.cat] || 0) + parseFloat(m.monto); });
@@ -631,14 +642,15 @@
             data: { labels: lbls.length ? lbls : ['Sin datos'], datasets: [{ data: vals.length ? vals : [1], backgroundColor: vals.length ? THEME_COLORS : ['#f2efe9'], borderWidth: 0 }] },
             options: { responsive: true, cutout: '75%', plugins: { legend: { position: 'right', labels: { font: { family: 'Jost' }, boxWidth: 12 } } } }
         });
+
         const arr = verTodo ? movs.filter(m => m.anio === anio && filtroTiendas.includes(m.tienda || 'Online')) : movs.filter(m => m.mes === mesRes && m.anio === anio && filtroTiendas.includes(m.tienda || 'Online'));
         document.getElementById('movCount').textContent = arr.length + ' registros';
-        document.getElementById('movBody').innerHTML = arr.length ? arr.map(m => `<tr> <td style="color:var(--muted);">${MESES[m.mes]}</td> <td><span class="tag" style="background:var(--surface2); color:var(--text);">${m.tienda || 'Online'}</span></td> <td>${m.cat}</td> <td><span class="tag ${m.tipo === 'Ingreso' ? 'tag-i' : m.tipo === 'Egreso' ? 'tag-e' : 'tag-g'}">${m.tipo === 'GastoFijo' ? 'G.Fijo' : m.tipo}</span></td> <td class="${m.tipo === 'Ingreso' ? 'pos' : 'neg'}">${m.tipo === 'Ingreso' ? '+' : '-'}${fmt(parseFloat(m.monto))}</td> <td style="color:var(--muted); font-size: 0.75rem;">${m.usuario || 'hethea'}</td> <td>${(currentUser === 'hethea' || currentUser === 'SSHADMIN' || m.usuario === currentUser) ? `<button class="btn btn-ghost btn-s" onclick="eliminar('${m.id}')">✕</button>` : '—'}</td></tr>`).join('') : `<tr><td colspan="7"><div class="empty">Sin actividad registrada en esta selección.</div></td></tr>`;
+        document.getElementById('movBody').innerHTML = arr.length ? arr.map(m => `<tr> <td style="color:var(--muted);">${MESES[m.mes]}</td> <td><span class="tag" style="background:var(--surface2); color:var(--text);">${m.tienda || 'Online'}</span></td> <td>${m.cat}</td> <td><span class="tag ${m.tipo === 'Ingreso' ? 'tag-i' : m.tipo === 'Egreso' ? 'tag-e' : 'tag-g'}">${m.tipo === 'GastoFijo' ? 'G.Fijo' : m.tipo}</span></td> <td class="${m.tipo === 'Ingreso' ? 'pos' : 'neg'}">${m.tipo === 'Ingreso' ? '+' : '-'}${fmt(parseFloat(m.monto))}</td> <td style="color:var(--muted); font-size: 0.75rem;">${m.usuario || 'hethea'}</td> <td>${(currentUser === 'hethea' || currentUser === 'SSHADMIN' || m.usuario === currentUser) ? `<button class="btn btn-ghost btn-s" onclick="eliminar('${m.id}')">✕</button>' : '—'}</td></tr>`).join('') : `<tr><td colspan="7"><div class="empty">Sin actividad registrada en esta selección.</div></td></tr>`;
     };
 
     window.renderAllMov = function() {
         const arr = movs.filter(m => m.mes === mesInp && m.anio === anio && (currentRol === 'admin' || currentRol === 'coadmin' || m.usuario === currentUser));
-        document.getElementById('allMovBody').innerHTML = arr.length ? arr.map(m => `<tr> <td><span class="tag" style="background:var(--surface2); color:var(--text);">${m.tienda || 'Online'}</span></td> <td>${m.cat}</td> <td><span class="tag ${m.tipo === 'Ingreso' ? 'tag-i' : m.tipo === 'Egreso' ? 'tag-e' : 'tag-g'}">${m.tipo === 'GastoFijo' ? 'G.Fijo' : m.tipo}</span></td> <td class="${m.tipo === 'Ingreso' ? 'pos' : 'neg'}">${fmt(parseFloat(m.monto))}</td> <td style="color:var(--muted);">${m.nota || '—'}</td> <td>${(currentUser === 'hethea' || currentUser === 'SSHADMIN' || m.usuario === currentUser) ? `<button class="btn btn-ghost btn-s" onclick="eliminar('${m.id}')">Anular</button>` : '—'}</td></tr>`).join('') : `<tr><td colspan="6"><div class="empty">No has registrado movimientos este mes.</div></td></tr>`;
+        document.getElementById('allMovBody').innerHTML = arr.length ? arr.map(m => `<tr> <td><span class="tag" style="background:var(--surface2); color:var(--text);">${m.tienda || 'Online'}</span></td> <td>${m.cat}</td> <td><span class="tag ${m.tipo === 'Ingreso' ? 'tag-i' : m.tipo === 'Egreso' ? 'tag-e' : 'tag-g'}">${m.tipo === 'GastoFijo' ? 'G.Fijo' : m.tipo}</span></td> <td class="${m.tipo === 'Ingreso' ? 'pos' : 'neg'}">${fmt(parseFloat(m.monto))}</td> <td style="color:var(--muted);">${m.nota || '—'}</td> <td>${(currentUser === 'hethea' || currentUser === 'SSHADMIN' || m.usuario === currentUser) ? `<button class="btn btn-ghost btn-s" onclick="eliminar('${m.id}')">Anular</button>' : '—'}</td></tr>`).join('') : `<tr><td colspan="6"><div class="empty">No has registrado movimientos este mes.</div></td></tr>`;
     };
 
     window.renderAnual = function() {
