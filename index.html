@@ -322,14 +322,19 @@
     <div class="grid3">
       <div class="card" style="height:fit-content">
         <div class="card-title">Nuevo Perfil</div>
+        <div class="field"><label>Nombre Completo</label>
+          <input type="text" id="nuNombre" placeholder="Ej. Juan Pérez"></div>
+        <div class="field"><label>Número de Documento</label>
+          <input type="text" id="nuDoc" placeholder="Ej. 123456789"></div>
         <div class="field"><label>Usuario</label>
           <input type="text" id="nuUser" placeholder="Nombre de acceso"></div>
         <div class="field"><label>Contraseña</label>
           <input type="password" id="nuPass" placeholder="Mínimo 6 caracteres"></div>
         <div class="field"><label>Rol Corporativo</label>
           <select id="nuRol">
+            <option value="admin">Administrador (Acceso Total)</option>
+            <option value="coadmin">Coadministrador (Acceso a datos y anular, no crea usuarios)</option>
             <option value="usuario">Usuario (Solo registra y ve lo propio)</option>
-            <option value="coadmin">Coadministrador (Acceso a datos, no crea usuarios)</option>
           </select>
         </div>
         <button class="btn btn-p" style="width:100%;margin-top:20px" onclick="crearUsuario()">Crear Perfil</button>
@@ -337,7 +342,7 @@
       <div class="card" style="grid-column: span 2;">
         <div class="card-title">Equipo HETHEA</div>
         <table>
-          <thead><tr><th>Usuario</th><th>Rol</th><th>Fecha creación</th><th>Acciones</th></tr></thead>
+          <thead><tr><th>Nombre</th><th>Documento</th><th>Usuario</th><th>Rol</th><th>Fecha creación</th><th>Acciones</th></tr></thead>
           <tbody id="usuariosBody"></tbody>
         </table>
       </div>
@@ -393,7 +398,6 @@
         t._tid = setTimeout(() => t.className = '', 2800);
     }
 
-    // CORRECCIÓN: Función para ver/ocultar contraseña
     function togglePass() {
         const p = document.getElementById('loginPass');
         const b = document.getElementById('eyeBtn');
@@ -431,14 +435,19 @@
         currentUser = sessionStorage.getItem('hethea_user');
         document.getElementById('activeUserLabel').textContent = currentUser + ' (' + currentRol + ')';
 
-        if (currentUser === 'hethea' || currentUser === 'SSHADMIN') {
+        // Administradores y Maestros ven todo
+        if (currentUser === 'hethea' || currentUser === 'SSHADMIN' || currentRol === 'admin') {
             document.getElementById('tabBtnUsuarios').style.display = 'inline-block';
             document.getElementById('toolbarExcel').style.display = 'block';
             cargarUsuariosList();
-        } else if (currentRol === 'coadmin') {
+        } 
+        // Coadministradores ven todo EXCEPTO la creación de usuarios
+        else if (currentRol === 'coadmin') {
             document.getElementById('tabBtnUsuarios').style.display = 'none';
             document.getElementById('toolbarExcel').style.display = 'block';
-        } else {
+        } 
+        // Usuarios normales solo ven su ingreso de datos
+        else {
             document.getElementById('tabBtnResumen').style.display = 'none';
             document.getElementById('tabBtnAnual').style.display = 'none';
             document.getElementById('toolbarExcel').style.display = 'none';
@@ -456,7 +465,9 @@
         if (data) {
             document.getElementById('usuariosBody').innerHTML = data.map(u => `
                 <tr>
-                    <td style="font-weight:600;">${u.usuario} ${u.usuario === 'hethea' || u.usuario === 'SSHADMIN' ? '<span class="tag tag-i" style="margin-left:5px">Principal</span>' : ''}</td>
+                    <td style="font-weight:600;">${u.nombre_completo || '—'}</td>
+                    <td style="color:var(--muted);">${u.documento || '—'}</td>
+                    <td style="font-weight:600;">${u.usuario} ${u.usuario === 'hethea' || u.usuario === 'SSHADMIN' || u.rol === 'admin' ? '<span class="tag tag-i" style="margin-left:5px">Principal</span>' : ''}</td>
                     <td><span class="tag ${u.rol === 'admin' ? 'tag-g' : u.rol === 'coadmin' ? 'tag-i' : 'tag-e'}">${u.rol}</span></td>
                     <td style="color:var(--muted);">${new Date(u.created_at).toLocaleDateString('es-CO')}</td>
                     <td>${u.usuario !== 'hethea' && u.usuario !== 'SSHADMIN' ? `<button class="btn btn-ghost btn-s" style="color:var(--danger)" onclick="borrarUsuario('${u.id}')">Remover</button>` : '—'}</td>
@@ -466,14 +477,31 @@
     }
 
     async function crearUsuario() {
+        const nombre = document.getElementById('nuNombre').value.trim();
+        const doc = document.getElementById('nuDoc').value.trim();
         const u = document.getElementById('nuUser').value.trim();
         const p = document.getElementById('nuPass').value;
         const r = document.getElementById('nuRol').value;
-        if (!u || p.length < 6) { toast('Datos inválidos. Mínimo 6 caracteres.', 'er'); return; }
+
+        if (!nombre || !doc || !u || p.length < 6) { 
+            toast('Completa todos los campos (mínimo 6 chars en clave)', 'er'); 
+            return; 
+        }
+        
         const hash = await hashStr(p);
-        const { error } = await sb.from('usuarios').insert({ usuario: u, password_hash: hash, rol: r });
+        const { error } = await sb.from('usuarios').insert({ 
+            usuario: u, 
+            password_hash: hash, 
+            rol: r,
+            nombre_completo: nombre,
+            documento: doc
+        });
+        
         if (error) { toast('Error: el usuario ya existe.', 'er'); return; }
-        toast('Perfil creado');
+        toast('Perfil creado exitosamente');
+        
+        document.getElementById('nuNombre').value = '';
+        document.getElementById('nuDoc').value = '';
         document.getElementById('nuUser').value = '';
         document.getElementById('nuPass').value = '';
         cargarUsuariosList();
@@ -486,7 +514,7 @@
         cargarUsuariosList();
     }
 
-    // CORRECCIÓN: Lógica de acceso mejorada
+    // ── LOGIN ──
     async function doLogin() {
         const userEl = document.getElementById('loginUser');
         const passEl = document.getElementById('loginPass');
@@ -518,7 +546,7 @@
                 initApp();
             } else {
                 errEl.style.display = 'block';
-                passEl.value = ''; // Limpiar contraseña en error
+                passEl.value = ''; 
             }
         } catch (e) {
             console.error("Error de login:", e);
@@ -677,12 +705,20 @@
 
         const arr = verTodo ? movs.filter(m => m.anio === anio && filtroTiendas.includes(m.tienda || 'Online')) : movs.filter(m => m.mes === mesRes && m.anio === anio && filtroTiendas.includes(m.tienda || 'Online'));
         document.getElementById('movCount').textContent = arr.length + ' registros';
-        document.getElementById('movBody').innerHTML = arr.length ? arr.map(m => `<tr> <td style="color:var(--muted);">${MESES[m.mes]}</td> <td><span class="tag" style="background:var(--surface2); color:var(--text);">${m.tienda || 'Online'}</span></td> <td>${m.cat}</td> <td><span class="tag ${m.tipo === 'Ingreso' ? 'tag-i' : m.tipo === 'Egreso' ? 'tag-e' : 'tag-g'}">${m.tipo === 'GastoFijo' ? 'G.Fijo' : m.tipo}</span></td> <td class="${m.tipo === 'Ingreso' ? 'pos' : 'neg'}">${m.tipo === 'Ingreso' ? '+' : '-'}${fmt(parseFloat(m.monto))}</td> <td style="color:var(--muted); font-size: 0.75rem;">${m.usuario || 'hethea'}</td> <td>${(currentUser === 'hethea' || currentUser === 'SSHADMIN' || m.usuario === currentUser) ? `<button class="btn btn-ghost btn-s" onclick="eliminar('${m.id}')">✕</button>` : '—'}</td></tr>`).join('') : `<tr><td colspan="7"><div class="empty">Sin actividad registrada en esta selección.</div></td></tr>`;
+        
+        // Coadmin y Admin pueden anular
+        const canDelete = (currentUser === 'hethea' || currentUser === 'SSHADMIN' || currentRol === 'admin' || currentRol === 'coadmin');
+        
+        document.getElementById('movBody').innerHTML = arr.length ? arr.map(m => `<tr> <td style="color:var(--muted);">${MESES[m.mes]}</td> <td><span class="tag" style="background:var(--surface2); color:var(--text);">${m.tienda || 'Online'}</span></td> <td>${m.cat}</td> <td><span class="tag ${m.tipo === 'Ingreso' ? 'tag-i' : m.tipo === 'Egreso' ? 'tag-e' : 'tag-g'}">${m.tipo === 'GastoFijo' ? 'G.Fijo' : m.tipo}</span></td> <td class="${m.tipo === 'Ingreso' ? 'pos' : 'neg'}">${m.tipo === 'Ingreso' ? '+' : '-'}${fmt(parseFloat(m.monto))}</td> <td style="color:var(--muted); font-size: 0.75rem;">${m.usuario || 'hethea'}</td> <td>${(canDelete || m.usuario === currentUser) ? `<button class="btn btn-ghost btn-s" onclick="eliminar('${m.id}')">✕</button>` : '—'}</td></tr>`).join('') : `<tr><td colspan="7"><div class="empty">Sin actividad registrada en esta selección.</div></td></tr>`;
     };
 
     window.renderAllMov = function() {
         const arr = movs.filter(m => m.mes === mesInp && m.anio === anio && (currentRol === 'admin' || currentRol === 'coadmin' || m.usuario === currentUser));
-        document.getElementById('allMovBody').innerHTML = arr.length ? arr.map(m => `<tr> <td><span class="tag" style="background:var(--surface2); color:var(--text);">${m.tienda || 'Online'}</span></td> <td>${m.cat}</td> <td><span class="tag ${m.tipo === 'Ingreso' ? 'tag-i' : m.tipo === 'Egreso' ? 'tag-e' : 'tag-g'}">${m.tipo === 'GastoFijo' ? 'G.Fijo' : m.tipo}</span></td> <td class="${m.tipo === 'Ingreso' ? 'pos' : 'neg'}">${fmt(parseFloat(m.monto))}</td> <td style="color:var(--muted);">${m.nota || '—'}</td> <td>${(currentUser === 'hethea' || currentUser === 'SSHADMIN' || m.usuario === currentUser) ? `<button class="btn btn-ghost btn-s" onclick="eliminar('${m.id}')">Anular</button>` : '—'}</td></tr>`).join('') : `<tr><td colspan="6"><div class="empty">No has registrado movimientos este mes.</div></td></tr>`;
+        
+        // Coadmin y Admin pueden anular
+        const canDelete = (currentUser === 'hethea' || currentUser === 'SSHADMIN' || currentRol === 'admin' || currentRol === 'coadmin');
+
+        document.getElementById('allMovBody').innerHTML = arr.length ? arr.map(m => `<tr> <td><span class="tag" style="background:var(--surface2); color:var(--text);">${m.tienda || 'Online'}</span></td> <td>${m.cat}</td> <td><span class="tag ${m.tipo === 'Ingreso' ? 'tag-i' : m.tipo === 'Egreso' ? 'tag-e' : 'tag-g'}">${m.tipo === 'GastoFijo' ? 'G.Fijo' : m.tipo}</span></td> <td class="${m.tipo === 'Ingreso' ? 'pos' : 'neg'}">${fmt(parseFloat(m.monto))}</td> <td style="color:var(--muted);">${m.nota || '—'}</td> <td>${(canDelete || m.usuario === currentUser) ? `<button class="btn btn-ghost btn-s" onclick="eliminar('${m.id}')">Anular</button>` : '—'}</td></tr>`).join('') : `<tr><td colspan="6"><div class="empty">No has registrado movimientos este mes.</div></td></tr>`;
     };
 
     window.renderAnual = function() {
