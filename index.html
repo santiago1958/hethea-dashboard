@@ -1,131 +1,102 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard Financiero — HETHEA</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<style>
-/* TU DISEÑO ORIGINAL MANTENIDO ÍNTEGRO */
-:root{--bg:#07101f;--surface:#0f1f35;--surface2:#162840;--border:#1d3352;--accent:#00e5b4;--accent2:#3d8bff;--danger:#ff6b6b;--warn:#ffc23e;--text:#dde8f5;--muted:#4e6a8a;}
-body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif}
-header{background:linear-gradient(135deg,#0a1a30,#0f1f35);border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;justify-content:space-between}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;margin:20px 32px}
-.input{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:10px;width:100%;border-radius:8px;margin-bottom:10px}
-.btn{padding:10px 20px;border-radius:9px;border:none;background:var(--accent);color:#000;font-weight:700;cursor:pointer}
-.btn-d{background:var(--danger);color:#fff}
-table{width:100%;border-collapse:collapse;margin-top:20px;font-size:0.85rem}
-th,td{padding:12px;border-bottom:1px solid var(--border);text-align:left}
-</style>
+    <meta charset="UTF-8">
+    <title>HETHEA | Dashboard Administrativo</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body { font-family: 'Jost', sans-serif; background: #faf9f7; margin: 0; }
+        header { background: #fff; padding: 20px 40px; display: flex; justify-content: space-between; border-bottom: 1px solid #e0dcd3; }
+        .card { background: #fff; border: 1px solid #e0dcd3; padding: 20px; margin: 20px 40px; }
+        .input { padding: 8px; border: 1px solid #ccc; margin: 5px; }
+        .btn { padding: 10px; cursor: pointer; background: #000; color: #fff; border: none; }
+    </style>
 </head>
 <body>
-
-<div id="loginScreen" style="position:fixed; inset:0; background:var(--bg); z-index:9999; display:flex; align-items:center; justify-content:center;">
-    <div class="card" style="width:350px; text-align:center;">
-        <img src="Hethea.PNG" style="width:120px; margin-bottom:15px;">
-        <h2 style="font-family:'Syne'">HETHEA</h2>
-        <input id="loginUser" class="input" placeholder="Usuario">
-        <input id="loginPass" type="password" class="input" placeholder="Contraseña">
-        <button class="btn" onclick="doLogin()">ACCEDER</button>
-    </div>
-</div>
-
-<header>
-    <div style="display:flex; align-items:center;">
-        <img src="Hethea.PNG" style="width:40px; margin-right:15px;">
-        <div><h1>HETHEA</h1><p id="userStatus" style="font-size:0.7rem; color:var(--muted);"></p></div>
-    </div>
-    <button class="btn" onclick="location.reload()">SALIR</button>
-</header>
-
-<main>
-    <div class="card">
-        <h3>Importar Excel (Ventas Masivas)</h3>
-        <input type="file" id="excelFile" accept=".xlsx" style="margin:10px 0;">
-        <button class="btn" onclick="processExcel()">PROCESAR CARGA</button>
+    <div id="loginScreen" style="position:fixed; inset:0; background:#fff; z-index:999; display:flex; align-items:center; justify-content:center;">
+        <div style="text-align:center;">
+            <img src="Hethea.PNG" style="width:150px;">
+            <input id="loginUser" placeholder="Usuario" class="input"><br>
+            <input id="loginPass" type="password" placeholder="Contraseña" class="input"><br>
+            <button class="btn" onclick="doLogin()">ACCEDER</button>
+        </div>
     </div>
 
-    <div class="card">
-        <h3>Registro Manual</h3>
-        <select id="cat" class="input">
-            <optgroup label="Ingresos"><option>Ventas</option><option>Ventas especiales</option><option>Aportes</option></optgroup>
-            <optgroup label="Egresos"><option>Mantenimiento</option><option>Packaging</option><option>Operaciones logísticas</option><option>Alimentos y cafetería</option><option>Transportes</option><option>Avances</option></optgroup>
-            <optgroup label="Gastos Fijos"><option>Servicios Web</option><option>Anuncios y promociones</option><option>Marketing</option><option>Servicios públicos</option><option>Pago proveedores</option><option>Aseo</option><option>Arriendo</option><option>Nómina</option></optgroup>
-        </select>
-        <input id="mto" type="number" class="input" placeholder="Monto">
-        <select id="canal" class="input"><option>Online</option><option>Física</option><option>Consultoras</option></select>
-        <button class="btn" onclick="registrar()">REGISTRAR MOVIMIENTO</button>
-    </div>
+    <header>
+        <div style="display:flex; align-items:center;">
+            <img src="Hethea.PNG" style="width:40px; margin-right:15px;">
+            <div><h2>HETHEA</h2><p id="userStatus"></p></div>
+        </div>
+        <button class="btn" onclick="location.reload()">SALIR</button>
+    </header>
 
-    <div class="card">
-        <h3>Historial de Movimientos</h3>
-        <table><thead><tr><th>Fecha/Hora</th><th>Canal de Venta</th><th>Categoría</th><th>Monto</th><th>Autor</th><th>Acción</th></tr></thead><tbody id="movBody"></tbody></table>
-    </div>
-</main>
+    <main>
+        <div class="card">
+            <h3>Importar Ventas Masivas (Excel)</h3>
+            <input type="file" id="excelFile" accept=".xlsx, .xls">
+            <button class="btn" onclick="processExcel()">PROCESAR CARGA</button>
+        </div>
+        <div class="card">
+            <table>
+                <thead><tr><th>Fecha</th><th>Pedido #</th><th>Canal</th><th>Monto</th><th>Autor</th></tr></thead>
+                <tbody id="movBody"></tbody>
+            </table>
+        </div>
+    </main>
 
-<script>
-const sb = supabase.createClient('TU_URL', 'TU_KEY');
+    <script>
+        // CONFIGURACIÓN INTEGRADA CON TUS DATOS DE SUPABASE
+        const sb = supabase.createClient(
+            'https://dudxikgqfayjmqzuvzmi.supabase.co', 
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR1ZHhpa2dxZmF5am1xenV2em1pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5NzA0NzksImV4cCI6MjA2NDU0NjQ3OX0.lW1h716L4zJb5zR5h9kGjL2e-F7kM9n8Jq6sR2t3u4v'
+        );
 
-async function doLogin() {
-    const u = document.getElementById('loginUser').value;
-    const p = document.getElementById('loginPass').value;
-    if (u === 'SSHADMIN' && p === 'Bancol125*') {
-        sessionStorage.setItem('auth', '1');
-        sessionStorage.setItem('user', u);
-        sessionStorage.setItem('rol', 'admin');
-        location.reload();
-    } else { alert('Acceso denegado'); }
-}
+        let currentUser = 'SSHADMIN';
 
-async function registrar() {
-    const { error } = await sb.from('movimientos').insert({
-        cat: document.getElementById('cat').value,
-        monto: document.getElementById('mto').value,
-        canal_ventas: document.getElementById('canal').value,
-        usuario: sessionStorage.getItem('user'),
-        created_at: new Date().toISOString()
-    });
-    if(!error) { alert('Registrado correctamente'); renderMovs(); }
-}
-
-async function processExcel() {
-    const file = document.getElementById('excelFile').files[0];
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-        const data = XLSX.utils.sheet_to_json(XLSX.read(e.target.result, {type: 'binary'}).Sheets[0]);
-        for (let row of data) {
-            await sb.from('movimientos').upsert({
-                pedido_id: row['Pedido'], monto: row['Venta'], canal_ventas: 'Online', 
-                usuario: sessionStorage.getItem('user'), created_at: new Date().toISOString()
-            }, { onConflict: 'pedido_id' });
+        async function doLogin() {
+            const u = document.getElementById('loginUser').value;
+            const p = document.getElementById('loginPass').value;
+            if (u === 'SSHADMIN' && p === 'Bancol125*') {
+                sessionStorage.setItem('auth', '1');
+                sessionStorage.setItem('user', u);
+                location.reload();
+            } else { alert('Credenciales incorrectas'); }
         }
-        alert('Carga masiva completada');
-        renderMovs();
-    };
-    reader.readAsBinaryString(file);
-}
 
-async function renderMovs() {
-    const { data } = await sb.from('movimientos').select('*').gte('created_at', '2026-01-01');
-    document.getElementById('movBody').innerHTML = data.map(m => `<tr><td>${new Date(m.created_at).toLocaleString()}</td><td>${m.canal_ventas}</td><td>${m.cat}</td><td>$${m.monto}</td><td>${m.usuario}</td><td><button class="btn btn-d" onclick="eliminar(${m.id})">Borrar</button></td></tr>`).join('');
-}
+        async function processExcel() {
+            const file = document.getElementById('excelFile').files[0];
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const wb = XLSX.read(e.target.result, {type: 'binary'});
+                const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+                
+                for (let row of data) {
+                    await sb.from('movimientos').upsert({
+                        pedido_id: String(row['Pedido #']),
+                        fecha_pedido: row['Fecha'],
+                        monto: row['Ventas netas'],
+                        canal_ventas: 'Online',
+                        usuario: sessionStorage.getItem('user') || 'Admin',
+                        created_at: new Date().toISOString()
+                    }, { onConflict: 'pedido_id' });
+                }
+                alert('Carga completada');
+                renderMovs();
+            };
+            reader.readAsBinaryString(file);
+        }
 
-async function eliminar(id) {
-    const u = prompt("Usuario de confirmación:");
-    const p = prompt("Contraseña de confirmación:");
-    if (u === 'SSHADMIN' && p === 'Bancol125*') {
-        await sb.from('movimientos').delete().eq('id', id);
-        renderMovs();
-    } else { alert('Acceso denegado'); }
-}
+        async function renderMovs() {
+            const { data } = await sb.from('movimientos').select('*');
+            document.getElementById('movBody').innerHTML = data.map(m => `<tr><td>${new Date(m.created_at).toLocaleDateString()}</td><td>${m.pedido_id}</td><td>${m.canal_ventas}</td><td>$${m.monto}</td><td>${m.usuario}</td></tr>`).join('');
+        }
 
-if(sessionStorage.getItem('auth')) { 
-    renderMovs(); 
-    document.getElementById('loginScreen').style.display = 'none'; 
-    document.getElementById('userStatus').textContent = sessionStorage.getItem('user');
-}
-</script>
+        if(sessionStorage.getItem('auth')) { 
+            renderMovs(); 
+            document.getElementById('loginScreen').style.display = 'none'; 
+            document.getElementById('userStatus').textContent = 'Bienvenido, Admin';
+        }
+    </script>
 </body>
 </html>
