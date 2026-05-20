@@ -24,6 +24,10 @@
   --warn: #975a16;
 }
 
+/* Estilos de Logo */
+.logo-header { height: 35px; width: auto; display: block; }
+.logo-login { max-width: 220px; width: 100%; height: auto; margin: 0 auto 20px auto; }
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { min-height: 100vh; }
 body { background: var(--bg); color: var(--text); font-family: 'Jost', sans-serif; overflow-x: hidden; }
@@ -142,7 +146,7 @@ tr:hover td { background: var(--bg); }
 .login-image { flex: 1; background: url('https://images.unsplash.com/photo-1601121141461-9d6647bca1ed?auto=format&fit=crop&w=800&q=80') center/cover; position: relative; }
 .login-image::after { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,0.1); }
 .login-box { flex: 1; padding: 60px 50px; display: flex; flex-direction: column; justify-content: center; }
-.login-brand { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 700; color: var(--accent); letter-spacing: 3px; margin-bottom: 5px; text-align: center; }
+.login-brand { text-align: center; margin-bottom: 30px; }
 .login-sub { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 40px; text-align: center; }
 .login-field { margin-bottom: 20px; }
 .login-field label { display: block; font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
@@ -160,12 +164,13 @@ tr:hover td { background: var(--bg); }
 </head>
 <body>
 
-<!-- PANTALLA DE LOGIN EDITORIAL -->
 <div id="loginScreen">
   <div class="login-wrap" id="loginBox">
     <div class="login-image"></div>
     <div class="login-box">
-      <div class="login-brand">HETHEA</div>
+      <div class="login-brand">
+        <img src="https://raw.githubusercontent.com/santiago1958/hethea-dashboard/main/Hethea.PNG" alt="HETHEA" class="logo-login">
+      </div>
       <div class="login-sub">Portal Financiero Privado</div>
       <div class="login-field">
         <label>Usuario</label>
@@ -185,7 +190,9 @@ tr:hover td { background: var(--bg); }
 
 <header>
   <div>
-    <div class="brand-logo">HETHEA</div>
+    <div class="brand-logo">
+      <img src="https://raw.githubusercontent.com/santiago1958/hethea-dashboard/main/Hethea.PNG" alt="HETHEA" class="logo-header">
+    </div>
     <div class="sub-logo">Finanzas & Operaciones</div>
   </div>
   <div style="display:flex;align-items:center;gap:20px">
@@ -211,10 +218,8 @@ tr:hover td { background: var(--bg); }
     <button class="tab" id="tabBtnUsuarios" style="display:none" onclick="showTab('usuarios',this)">Gestión de Usuarios</button>
   </div>
 
-  <!-- RESUMEN -->
   <div id="tab-resumen">
     <div class="filter-group">
-      <!-- Filtro de Tienda -->
       <div class="mes-wrap" style="margin-bottom:0;">
         <span style="font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px; width:60px;">Tienda:</span>
         <button class="t-btn todo active" id="btnT_Todo" onclick="selTienda('Todo')">Todo HETHEA</button>
@@ -222,7 +227,6 @@ tr:hover td { background: var(--bg); }
         <button class="t-btn active" id="btnT_Fisica" onclick="selTienda('Física')">Física</button>
         <button class="t-btn active" id="btnT_Consultoras" onclick="selTienda('Consultoras')">Consultoras</button>
       </div>
-      <!-- Filtro de Mes -->
       <div class="mes-wrap" style="margin-bottom:0;">
         <span style="font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px; width:60px;">Mes:</span>
         <button class="mb todo" id="btnTodo" onclick="selTodo()">Año Completo</button>
@@ -251,7 +255,6 @@ tr:hover td { background: var(--bg); }
     </div>
   </div>
 
-  <!-- INGRESAR -->
   <div id="tab-ingresar" style="display:none">
     <div class="filter-group" style="flex-direction:row; gap: 40px; align-items:center;">
       <div class="mes-wrap" style="margin-bottom:0;">
@@ -301,7 +304,6 @@ tr:hover td { background: var(--bg); }
     </div>
   </div>
 
-  <!-- ANUAL -->
   <div id="tab-anual" style="display:none">
     <div class="card" style="margin-bottom:24px">
       <div class="card-title">Balance Anual Consolidado</div>
@@ -313,7 +315,6 @@ tr:hover td { background: var(--bg); }
     </div>
   </div>
 
-  <!-- USUARIOS -->
   <div id="tab-usuarios" style="display:none">
     <div class="grid3">
       <div class="card" style="height:fit-content">
@@ -345,7 +346,6 @@ tr:hover td { background: var(--bg); }
   <button class="toolbar-btn" onclick="exportarExcel()">Descargar Reporte (.xlsx)</button>
 </div>
 
-<!-- MODAL CONTRASEÑA -->
 <div class="modal-overlay" id="pwModal">
   <div class="modal-box">
     <h2>Autorización Requerida</h2>
@@ -597,7 +597,7 @@ window.agregar = async function(tipo) {
   let cat,mto,nta;
   const tnd = document.getElementById('inpTienda').value; // Nueva captura de Tienda
 
-  if(tipo==='Ingreso')  {cat=document.getElementById('catI').value;mto=parseFloat(document.getElementById('mtoI').value);nta=document.getElementById('ntaI').value;}
+  if(tipo==='Ingreso')   {cat=document.getElementById('catI').value;mto=parseFloat(document.getElementById('mtoI').value);nta=document.getElementById('ntaI').value;}
   if(tipo==='Egreso')   {cat=document.getElementById('catE').value;mto=parseFloat(document.getElementById('mtoE').value);nta=document.getElementById('ntaE').value;}
   if(tipo==='GastoFijo'){cat=document.getElementById('catG').value;mto=parseFloat(document.getElementById('mtoG').value);nta=document.getElementById('ntaG').value;}
   if(!mto||mto<=0){toast('Monto inválido','er');return;}
@@ -609,8 +609,8 @@ window.agregar = async function(tipo) {
   if(error) { toast('Error al registrar','er'); return; }
   toast('Registro exitoso');
   
-  if(tipo==='Ingreso')  {document.getElementById('mtoI').value='';document.getElementById('ntaI').value='';}
-  if(tipo==='Egreso')   {document.getElementById('mtoE').value='';document.getElementById('ntaE').value='';}
+  if(tipo==='Ingreso')   {document.getElementById('mtoI').value='';document.getElementById('ntaI').value='';}
+  if(tipo==='Egreso')    {document.getElementById('mtoE').value='';document.getElementById('ntaE').value='';}
   if(tipo==='GastoFijo'){document.getElementById('mtoG').value='';document.getElementById('ntaG').value='';}
 };
 
