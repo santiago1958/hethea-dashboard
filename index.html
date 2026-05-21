@@ -6,7 +6,7 @@
 <title>HETHEA | Portal Financiero</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
     /* PALETA DE COLORES INSPIRADA EN HETHEA */
@@ -398,8 +398,19 @@
 <script>
     // ── SUPABASE CONFIG ──
     const SUPABASE_URL = 'https://ltxzatdfqyyzvilrhpvs.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_LW224xultOPk7brIBcC3bQ_lmPn5Dmg';
-    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_KEY = 'sb_publishable_LW224xultOPk7brIBcC3bQ_lmPn5Dmg';
+
+if (!window.supabase) {
+    console.error('Supabase NO cargó correctamente');
+    alert('Error cargando Supabase');
+}
+
+const sb = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
+
+console.log('Supabase conectado correctamente');	
 
     const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     const MESES_F = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -470,19 +481,18 @@
         t._tid = setTimeout(() => t.className = '', 2800);
     }
 
-    window.togglePass = function() {
-        const p = document.getElementById('loginPass');
-        const b = document.getElementById('eyeBtn');
-        if (!p || !b) return;
-        if (p.type === 'password') {
-            p.type = 'text';
-            b.textContent = 'OCULTAR';
-        } else {
-            p.type = 'password';
-            b.textContent = 'VER';
-        }
-    };
-
+window.togglePass = function() {
+    const p = document.getElementById('loginPass');
+    const b = document.getElementById('eyeBtn');
+    if (!p || !b) return;
+    if (p.type === 'password') {
+        p.type = 'text';
+        b.textContent = 'OCULTAR';
+    } else {
+        p.type = 'password';
+        b.textContent = 'VER';
+    }
+};
     function setSyncStatus(state, label) {
         document.getElementById('syncDot').className = 'sync-dot' + (state === 'live' ? ' live' : state === 'err' ? ' err' : '');
         document.getElementById('syncLabel').textContent = label;
@@ -524,8 +534,8 @@
     });
 
     function initApp() {
-        currentRol = sessionStorage.getItem('hethea_rol');
-        currentUser = sessionStorage.getItem('hethea_user');
+        currentRol = localStorage.getItem('hethea_rol');
+        currentUser = localStorage.getItem('hethea_user');
         document.getElementById('activeUserLabel').textContent = currentUser + ' (' + currentRol + ')';
 
         if (currentUser === 'hethea' || currentUser === 'SSHADMIN' || currentRol === 'admin') {
@@ -547,7 +557,10 @@
         suscribirRealtime();
     }
 
-    window.cerrarSesion = function() { sessionStorage.clear(); location.reload(); };
+    window.cerrarSesion = function() { 
+    localStorage.clear(); 
+    location.reload(); 
+};
 
     async function cargarUsuariosList() {
         const { data } = await sb.from('usuarios').select('*').order('created_at', { ascending: false });
@@ -603,55 +616,53 @@
         cargarUsuariosList();
     };
 
-    window.doLogin = async function() {
-        const userEl = document.getElementById('loginUser');
-        const passEl = document.getElementById('loginPass');
-        const errEl = document.getElementById('loginError');
-        
-        const user = userEl.value.trim();
-        const pass = passEl.value;
-        
-        if (!user || !pass) {
-            errEl.textContent = 'Por favor, ingrese usuario y contraseña';
-            errEl.style.display = 'block';
-            return;
-        }
-
-        try {
-            const passHash = await hashStr(pass);
-            const { data, error } = await sb.from('usuarios')
-                .select('*')
-                .eq('usuario', user)
-                .single();
-
-            const isMasterFallback = (user === 'SSHADMIN' && pass === 'Bancol125*');
-
-            if (isMasterFallback || (data && data.password_hash === passHash)) {
-                sessionStorage.setItem('hethea_auth', '1');
-                sessionStorage.setItem('hethea_rol', isMasterFallback ? 'admin' : data.rol);
-                sessionStorage.setItem('hethea_user', user);
-                
-                document.getElementById('loginScreen').style.display = 'none';
-                initApp();
-            } else {
-                errEl.textContent = 'Credenciales incorrectas. Verifique su acceso.';
-                errEl.style.display = 'block';
-                passEl.value = ''; 
-            }
-        } catch (e) {
-            console.error("Error de login:", e);
-            errEl.textContent = 'Error de conexión. Intente de nuevo.';
-            errEl.style.display = 'block';
-        }
-    };
-
-    function checkAuth() {
-        if (sessionStorage.getItem('hethea_auth') === '1') {
-            document.getElementById('loginScreen').style.display = 'none';
-            initApp();
-        }
+window.doLogin = async function() {
+    const userEl = document.getElementById('loginUser');
+    const passEl = document.getElementById('loginPass');
+    const errEl = document.getElementById('loginError');
+    
+    const user = userEl.value.trim();
+    const pass = passEl.value;
+    
+    if (!user || !pass) {
+        errEl.textContent = 'Por favor, ingrese usuario y contraseña';
+        errEl.style.display = 'block';
+        return;
     }
 
+    try {
+        const passHash = await hashStr(pass);
+        const { data, error } = await sb.from('usuarios')
+            .select('*')
+            .eq('usuario', user)
+            .single();
+
+        const isMasterFallback = (user === 'SSHADMIN' && pass === 'Bancol125*');
+
+        if (isMasterFallback || (data && data.password_hash === passHash)) {
+            sessionStorage.setItem('hethea_auth', '1');
+            sessionStorage.setItem('hethea_rol', isMasterFallback ? 'admin' : data.rol);
+            sessionStorage.setItem('hethea_user', user);
+            
+            document.getElementById('loginScreen').style.display = 'none';
+            initApp();
+        } else {
+            errEl.textContent = 'Credenciales incorrectas. Verifique su acceso.';
+            errEl.style.display = 'block';
+            passEl.value = ''; 
+        }
+    } catch (e) {
+        console.error("Error de login:", e);
+        errEl.textContent = 'Error de conexión. Intente de nuevo.';
+        errEl.style.display = 'block';
+    }
+};
+    function checkAuth() {
+    if (localStorage.getItem('hethea_auth') === '1') {
+        document.getElementById('loginScreen').style.display = 'none';
+        initApp();
+    }
+}
     window.selTienda = function(t) {
         if(t === 'Todo') { filtroTiendas = ['Online', 'Física', 'Consultoras']; } else {
             if(filtroTiendas.length === 3) { filtroTiendas = [t]; } else {
