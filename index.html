@@ -180,10 +180,10 @@
       </div>
       <div class="login-field">
         <label>Contraseña</label>
-        <input class="login-input" type="password" id="loginPass">
-        <button type="button" class="eye-btn" onclick="togglePass()" id="eyeBtn">VER</button>
+        <input class="login-input" type="password" id="loginPass" onkeydown="if(event.key==='Enter')window.doLogin()">
+        <button type="button" class="eye-btn" onclick="window.togglePass()" id="eyeBtn">VER</button>
       </div>
-      <button type="button" class="login-btn" onclick="doLogin()">Acceder</button>
+      <button type="button" class="login-btn" onclick="window.doLogin()">Acceder</button>
       <div class="login-error" id="loginError">Credenciales incorrectas. Verifique su acceso.</div>
     </div>
   </div>
@@ -203,35 +203,35 @@
       <span class="sync-dot" id="syncDot"></span>
       <span id="syncLabel">Sincronizando</span>
     </div>
-    <select id="yearSelect" class="year-sel" onchange="cambiarAnio(this.value)">
+    <select id="yearSelect" class="year-sel" onchange="window.cambiarAnio(this.value)">
       </select>
     <div style="display:flex; align-items:center; gap: 10px; border-left: 1px solid var(--border); padding-left: 20px;">
       <span id="activeUserLabel" style="font-size:0.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:1px;"></span>
-      <button type="button" class="btn btn-ghost btn-s" onclick="cerrarSesion()">Salir</button>
+      <button type="button" class="btn btn-ghost btn-s" onclick="window.cerrarSesion()">Salir</button>
     </div>
   </div>
 </header>
 
 <main>
   <div class="tabs">
-    <button type="button" class="tab active" onclick="showTab('resumen',this)" id="tabBtnResumen">Resumen General</button>
-    <button type="button" class="tab" onclick="showTab('ingresar',this)">Registro de Datos</button>
-    <button type="button" class="tab" onclick="showTab('anual',this)" id="tabBtnAnual">Vista Anual</button>
-    <button type="button" class="tab" id="tabBtnUsuarios" style="display:none" onclick="showTab('usuarios',this)">Gestión de Usuarios</button>
+    <button type="button" class="tab active" onclick="window.showTab('resumen',this)" id="tabBtnResumen">Resumen General</button>
+    <button type="button" class="tab" onclick="window.showTab('ingresar',this)">Registro de Datos</button>
+    <button type="button" class="tab" onclick="window.showTab('anual',this)" id="tabBtnAnual">Vista Anual</button>
+    <button type="button" class="tab" id="tabBtnUsuarios" style="display:none" onclick="window.showTab('usuarios',this)">Gestión de Usuarios</button>
   </div>
 
   <div id="tab-resumen">
     <div class="filter-group">
       <div class="mes-wrap" style="margin-bottom:0;">
         <span style="font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px; width:60px;">Tienda:</span>
-        <button type="button" class="t-btn todo active" id="btnT_Todo" onclick="selTienda('Todo')">Todo HETHEA</button>
-        <button type="button" class="t-btn active" id="btnT_Online" onclick="selTienda('Online')">Online</button>
-        <button type="button" class="t-btn active" id="btnT_Fisica" onclick="selTienda('Física')">Física</button>
-        <button type="button" class="t-btn active" id="btnT_Consultoras" onclick="selTienda('Consultoras')">Consultoras</button>
+        <button type="button" class="t-btn todo active" id="btnT_Todo" onclick="window.selTienda('Todo')">Todo HETHEA</button>
+        <button type="button" class="t-btn active" id="btnT_Online" onclick="window.selTienda('Online')">Online</button>
+        <button type="button" class="t-btn active" id="btnT_Fisica" onclick="window.selTienda('Física')">Física</button>
+        <button type="button" class="t-btn active" id="btnT_Consultoras" onclick="window.selTienda('Consultoras')">Consultoras</button>
       </div>
       <div class="mes-wrap" style="margin-bottom:0;">
         <span style="font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px; width:60px;">Mes:</span>
-        <button type="button" class="mb todo" id="btnTodo" onclick="selTodo()">Año Completo</button>
+        <button type="button" class="mb todo" id="btnTodo" onclick="window.selTodo()">Año Completo</button>
         <div class="mes-sel" id="msRes"></div>
       </div>
     </div>
@@ -284,11 +284,11 @@
           </select></div>
         <div class="field"><label>Monto ($)</label><input type="number" id="mtoI" placeholder="0.00" min="0" step="0.01"></div>
         <div class="field"><label>Nota (opcional)</label><input type="text" id="ntaI" placeholder="Referencia del ingreso..."></div>
-        <button type="button" class="btn btn-p" style="width:100%;margin-top:10px" onclick="agregar('Ingreso')">Registrar Ingreso manual</button>
+        <button type="button" class="btn btn-p" style="width:100%;margin-top:10px" onclick="window.agregar('Ingreso')">Registrar Ingreso manual</button>
 
         <hr style="margin:20px 0; border:0; border-top:1px dashed var(--border);">
         <h4 style="font-size:0.8rem; color:var(--accent); margin-bottom:10px;">Importación Masiva (Excel / CSV)</h4>
-        <input type="file" id="fileExcelVentas" accept=".xlsx, .xls, .csv" style="display:none;" onchange="procesarExcelVentas(event)">
+        <input type="file" id="fileExcelVentas" accept=".xlsx, .xls, .csv" style="display:none;" onchange="window.procesarExcelVentas(event)">
         <button type="button" class="btn btn-w" style="width:100%; border: 1px dashed var(--accent);" onclick="document.getElementById('fileExcelVentas').click()">Subir Excel de Ventas</button>
         <div id="progresoExcel" style="font-size:0.7rem; color:var(--muted); text-align:center; margin-top:8px; display:none;"></div>
       </div>
@@ -305,7 +305,7 @@
           </select></div>
         <div class="field"><label>Monto ($)</label><input type="number" id="mtoE" placeholder="0.00" min="0" step="0.01"></div>
         <div class="field"><label>Nota (opcional)</label><input type="text" id="ntaE" placeholder="Detalles del egreso..."></div>
-        <button type="button" class="btn btn-d" style="width:100%;margin-top:10px" onclick="agregar('Egreso')">Registrar Egreso</button>
+        <button type="button" class="btn btn-d" style="width:100%;margin-top:10px" onclick="window.agregar('Egreso')">Registrar Egreso</button>
       </div>
       <div class="igroup">
         <h3 style="color:var(--warn)">Gasto Fijo / Estructural</h3>
@@ -322,7 +322,7 @@
           </select></div>
         <div class="field"><label>Monto ($)</label><input type="number" id="mtoG" placeholder="0.00" min="0" step="0.01"></div>
         <div class="field"><label>Nota (opcional)</label><input type="text" id="ntaG" placeholder="Detalles del gasto fijo..."></div>
-        <button type="button" class="btn btn-w" style="width:100%;margin-top:10px" onclick="agregar('GastoFijo')">Registrar Gasto Fijo</button>
+        <button type="button" class="btn btn-w" style="width:100%;margin-top:10px" onclick="window.agregar('GastoFijo')">Registrar Gasto Fijo</button>
       </div>
     </div>
     <div class="card" style="margin-top:30px">
@@ -362,7 +362,7 @@
             <option value="usuario">Usuario (Solo registra y ve lo propio)</option>
           </select>
         </div>
-        <button type="button" class="btn btn-p" style="width:100%;margin-top:20px" onclick="crearUsuario()">Crear Perfil</button>
+        <button type="button" class="btn btn-p" style="width:100%;margin-top:20px" onclick="window.crearUsuario()">Crear Perfil</button>
       </div>
       <div class="card" style="grid-column: span 2;">
         <div class="card-title">Equipo HETHEA</div>
@@ -376,7 +376,7 @@
 </main>
 
 <div class="toolbar" id="toolbarExcel" style="display:none;">
-  <button type="button" class="toolbar-btn" onclick="exportarExcel()">Descargar Reporte (.xlsx)</button>
+  <button type="button" class="toolbar-btn" onclick="window.exportarExcel()">Descargar Reporte (.xlsx)</button>
 </div>
 
 <div class="modal-overlay" id="pwModal">
@@ -384,11 +384,11 @@
     <h2>Autorización Requerida</h2>
     <p>Ingrese credenciales completas de seguridad para anular este registro financiero.</p>
     <input class="pw-input" type="text" id="confUser" placeholder="USUARIO" style="text-transform: uppercase; margin-bottom: 12px; width:100%; background: var(--bg); border: 1px solid var(--border); padding: 10px;">
-    <input class="pw-input" type="password" id="confPass" placeholder="CONTRASEÑA" onkeydown="if(event.key==='Enter')confirmarEliminar()" style="letter-spacing: 2px; width:100%; background: var(--bg); border: 1px solid var(--border); padding: 10px;">
+    <input class="pw-input" type="password" id="confPass" placeholder="CONTRASEÑA" onkeydown="if(event.key==='Enter')window.confirmarEliminar()" style="letter-spacing: 2px; width:100%; background: var(--bg); border: 1px solid var(--border); padding: 10px;">
     <div class="pw-error" id="pwError">Usuario o contraseña inválidos.</div>
     <div style="display:flex;gap:15px; margin-top: 15px;">
-      <button type="button" class="btn btn-p" style="flex:1" onclick="confirmarEliminar()">Confirmar</button>
-      <button type="button" class="btn btn-ghost" style="flex:1" onclick="cerrarPw()">Cancelar</button>
+      <button type="button" class="btn btn-p" style="flex:1" onclick="window.confirmarEliminar()">Confirmar</button>
+      <button type="button" class="btn btn-ghost" style="flex:1" onclick="window.cerrarPw()">Cancelar</button>
     </div>
   </div>
 </div>
@@ -404,7 +404,6 @@
     const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     const MESES_F = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
-    // LÓGICA DE TIEMPO DINÁMICA DE ACUERDO CON TUS INSTRUCCIONES (Desde Enero de 2026 en adelante)
     let anio = new Date().getFullYear();
     if (anio < 2026) {
         anio = 2026;
@@ -420,7 +419,6 @@
     let currentUser = '';
     let filtroTiendas = ['Online', 'Física', 'Consultoras'];
 
-    // ── TRAZABILIDAD COMPLETA DE FECHA Y HORA ──
     function fmtFecha(ts) {
         if (!ts) return '—';
         const d = new Date(ts);
@@ -433,7 +431,6 @@
         return `${dia}/${mes}/${anioStr} ${hora}:${min}:${seg}`;
     }
 
-    // ── PARSEO DE FECHA DESDE EXCEL ──
     function parseExcelDate(fechaVal) {
         if(!fechaVal) return Date.now();
         if(typeof fechaVal === 'number') {
@@ -461,7 +458,7 @@
         t._tid = setTimeout(() => t.className = '', 2800);
     }
 
-    function togglePass() {
+    window.togglePass = function() {
         const p = document.getElementById('loginPass');
         const b = document.getElementById('eyeBtn');
         if (!p || !b) return;
@@ -473,7 +470,7 @@
             p.type = 'password';
             b.textContent = 'VER';
         }
-    }
+    };
 
     function setSyncStatus(state, label) {
         document.getElementById('syncDot').className = 'sync-dot' + (state === 'live' ? ' live' : state === 'err' ? ' err' : '');
@@ -481,7 +478,18 @@
         document.getElementById('statusBar').className = state === 'live' ? 'ok' : state === 'err' ? 'err' : 'loading';
     }
 
+    // Respaldo de seguridad en caso de ejecución local sin HTTPS
     async function hashStr(str) {
+        if (!window.crypto || !window.crypto.subtle) {
+            console.warn("crypto.subtle bloqueado por el navegador local. Generando hash alternativo.");
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                let chr = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + chr;
+                hash |= 0; 
+            }
+            return hash.toString(16);
+        }
         const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
         return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
     }
@@ -498,11 +506,10 @@
         }
     }
 
-    // ── INIT APP ──
     window.addEventListener('DOMContentLoaded', () => {
         buildYearSelect();
-        buildMesSel('msRes', () => mesRes, v => { mesRes = v; verTodo = false; syncMesSel('msInp', v); document.getElementById('btnTodo').classList.remove('active'); renderResumen(); });
-        buildMesSel('msInp', () => mesInp, v => { mesInp = v; mesRes = v; verTodo = false; syncMesSel('msRes', v); document.getElementById('btnTodo').classList.remove('active'); renderResumen(); renderAllMov(); });
+        buildMesSel('msRes', () => mesRes, v => { mesRes = v; verTodo = false; syncMesSel('msInp', v); document.getElementById('btnTodo').classList.remove('active'); window.renderResumen(); });
+        buildMesSel('msInp', () => mesInp, v => { mesInp = v; mesRes = v; verTodo = false; syncMesSel('msRes', v); document.getElementById('btnTodo').classList.remove('active'); window.renderResumen(); window.renderAllMov(); });
         checkAuth();
     });
 
@@ -511,7 +518,6 @@
         currentUser = sessionStorage.getItem('hethea_user');
         document.getElementById('activeUserLabel').textContent = currentUser + ' (' + currentRol + ')';
 
-        // LÓGICA DE CONTROL SEGÚN ROLES
         if (currentUser === 'hethea' || currentUser === 'SSHADMIN' || currentRol === 'admin') {
             document.getElementById('tabBtnUsuarios').style.display = 'inline-block';
             document.getElementById('toolbarExcel').style.display = 'block';
@@ -525,15 +531,14 @@
             document.getElementById('tabBtnResumen').style.display = 'none';
             document.getElementById('tabBtnAnual').style.display = 'none';
             document.getElementById('toolbarExcel').style.display = 'none';
-            showTab('ingresar', document.querySelectorAll('.tab')[1]);
+            window.showTab('ingresar', document.querySelectorAll('.tab')[1]);
         }
         cargarDatos();
         suscribirRealtime();
     }
 
-    function cerrarSesion() { sessionStorage.clear(); location.reload(); }
+    window.cerrarSesion = function() { sessionStorage.clear(); location.reload(); };
 
-    // ── GESTIÓN USUARIOS (CON NOMBRE COMPLETO Y DOCUMENTO) ──
     async function cargarUsuariosList() {
         const { data } = await sb.from('usuarios').select('*').order('created_at', { ascending: false });
         if (data) {
@@ -544,13 +549,13 @@
                     <td style="font-weight:600;">${u.usuario} ${u.usuario === 'hethea' || u.usuario === 'SSHADMIN' || u.rol === 'admin' ? '<span class="tag tag-i" style="margin-left:5px">Principal</span>' : ''}</td>
                     <td><span class="tag ${u.rol === 'admin' ? 'tag-g' : u.rol === 'coadmin' ? 'tag-i' : 'tag-e'}">${u.rol}</span></td>
                     <td style="color:var(--muted);">${new Date(u.created_at).toLocaleDateString('es-CO')}</td>
-                    <td>${u.usuario !== 'hethea' && u.usuario !== 'SSHADMIN' ? `<button type="button" class="btn btn-ghost btn-s" style="color:var(--danger)" onclick="borrarUsuario('${u.id}')">Remover</button>` : '—'}</td>
+                    <td>${u.usuario !== 'hethea' && u.usuario !== 'SSHADMIN' ? `<button type="button" class="btn btn-ghost btn-s" style="color:var(--danger)" onclick="window.borrarUsuario('${u.id}')">Remover</button>` : '—'}</td>
                 </tr>
             `).join('');
         }
     }
 
-    async function crearUsuario() {
+    window.crearUsuario = async function() {
         const nombre = document.getElementById('nuNombre').value.trim();
         const doc = document.getElementById('nuDoc').value.trim();
         const u = document.getElementById('nuUser').value.trim();
@@ -579,17 +584,16 @@
         document.getElementById('nuUser').value = '';
         document.getElementById('nuPass').value = '';
         cargarUsuariosList();
-    }
+    };
 
-    async function borrarUsuario(id) {
+    window.borrarUsuario = async function(id) {
         if (!confirm('¿Eliminar perfil?')) return;
         await sb.from('usuarios').delete().eq('id', id);
         toast('Perfil removido');
         cargarUsuariosList();
-    }
+    };
 
-    // ── ACCESO AL PORTAL ──
-    async function doLogin() {
+    window.doLogin = async function() {
         const userEl = document.getElementById('loginUser');
         const passEl = document.getElementById('loginPass');
         const errEl = document.getElementById('loginError');
@@ -598,7 +602,8 @@
         const pass = passEl.value;
         
         if (!user || !pass) {
-            toast('Por favor, ingrese usuario y contraseña', 'er');
+            errEl.textContent = 'Por favor, ingrese usuario y contraseña';
+            errEl.style.display = 'block';
             return;
         }
 
@@ -619,14 +624,16 @@
                 document.getElementById('loginScreen').style.display = 'none';
                 initApp();
             } else {
+                errEl.textContent = 'Credenciales incorrectas. Verifique su acceso.';
                 errEl.style.display = 'block';
                 passEl.value = ''; 
             }
         } catch (e) {
             console.error("Error de login:", e);
-            toast('Error de conexión', 'er');
+            errEl.textContent = 'Error de conexión. Intente de nuevo.';
+            errEl.style.display = 'block';
         }
-    }
+    };
 
     function checkAuth() {
         if (sessionStorage.getItem('hethea_auth') === '1') {
@@ -635,7 +642,6 @@
         }
     }
 
-    // ── PROCESAMIENTO DE DATOS FINANCIEROS ──
     window.selTienda = function(t) {
         if(t === 'Todo') { filtroTiendas = ['Online', 'Física', 'Consultoras']; } else {
             if(filtroTiendas.length === 3) { filtroTiendas = [t]; } else {
@@ -648,8 +654,8 @@
         document.getElementById('btnT_Online').classList.toggle('active', filtroTiendas.includes('Online'));
         document.getElementById('btnT_Fisica').classList.toggle('active', filtroTiendas.includes('Física'));
         document.getElementById('btnT_Consultoras').classList.toggle('active', filtroTiendas.includes('Consultoras'));
-        renderResumen();
-        if(document.getElementById('tab-anual').style.display === 'block') renderAnual();
+        window.renderResumen();
+        if(document.getElementById('tab-anual').style.display === 'block') window.renderAnual();
     };
 
     async function cargarDatos() {
@@ -658,8 +664,8 @@
         if (error) { setSyncStatus('err', 'Error'); console.error(error); return; }
         movs = (currentRol === 'usuario') ? data.filter(m => m.usuario === currentUser) : (data || []);
         setSyncStatus('live', 'En línea');
-        if(currentRol !== 'usuario') { renderResumen(); renderAnual(); }
-        renderAllMov();
+        if(currentRol !== 'usuario') { window.renderResumen(); window.renderAnual(); }
+        window.renderAllMov();
     }
 
     function suscribirRealtime() {
@@ -670,7 +676,7 @@
     }
 
     window.cambiarAnio = function(y) { anio = parseInt(y); cargarDatos(); };
-    window.selTodo = function() { verTodo = true; document.getElementById('btnTodo').classList.add('active'); document.querySelectorAll('#msRes .mb').forEach(b => b.classList.remove('active')); renderResumen(); };
+    window.selTodo = function() { verTodo = true; document.getElementById('btnTodo').classList.add('active'); document.querySelectorAll('#msRes .mb').forEach(b => b.classList.remove('active')); window.renderResumen(); };
 
     function syncMesSel(id, mes) { const el = document.getElementById(id); if (!el) return; el.querySelectorAll('.mb').forEach((b, i) => b.classList.toggle('active', i === mes)); }
     function buildMesSel(id, getter, setter) {
@@ -700,7 +706,6 @@
         return { ing, eg, gf, bal: ing - eg - gf };
     }
 
-    // ── ABSTRACCIÓN CRUD MANUAL ──
     window.agregar = async function(tipo) {
         let cat, mto, nta;
         const tnd = document.getElementById('inpTienda').value;
@@ -718,7 +723,7 @@
                 cat: cat, 
                 monto: mto, 
                 nota: nta || '', 
-                ts: Date.now(), // <-- TRAZABILIDAD AUTOMÁTICA DE FECHA Y HORA EN REGISTROS
+                ts: Date.now(), 
                 usuario: currentUser, 
                 tienda: tnd 
             });
@@ -733,7 +738,6 @@
         }
     };
 
-    // ── PROCESAMIENTO MASIVO DE EXCEL (CON REGLA DE SOBREESCRITURA) ──
     window.procesarExcelVentas = async function(e) {
         const file = e.target.files[0];
         if(!file) return;
@@ -768,7 +772,6 @@
                         const ts = parseExcelDate(fechaRaw);
 
                         if(ventasMap.has(numPedido)) {
-                            // Si se repite en el mismo excel, conservamos el de la fecha más reciente
                             if(ts > ventasMap.get(numPedido).ts) {
                                 ventasMap.set(numPedido, { numPedido, ts, monto, prods });
                             }
@@ -778,11 +781,10 @@
                     }
                 });
 
-                if(ventasMap.size === 0) throw new Error('No se encontraron columnas requeridas (Pedido #, Ventas netas, Fecha)');
+                if(ventasMap.size === 0) throw new Error('Columnas requeridas no encontradas.');
 
-                status.textContent = 'Sincronizando con base de datos (Puede tardar unos segundos)...';
+                status.textContent = 'Sincronizando con base de datos...';
 
-                // Obtener referencias existentes para hacer upsert
                 const { data: existentes } = await sb.from('movimientos')
                     .select('id, pedido_ref')
                     .not('pedido_ref', 'is', null);
@@ -822,22 +824,20 @@
 
                 toast(`¡Proceso completado! ${insertados} registrados, ${actualizados} actualizados.`);
                 status.style.display = 'none';
-                document.getElementById('fileExcelVentas').value = ''; // Limpiar input
+                document.getElementById('fileExcelVentas').value = ''; 
                 
-                // Recargar datos sin refrescar la página
                 cargarDatos();
 
             } catch(err) {
                 console.error(err);
                 toast(err.message, 'er');
                 status.style.display = 'none';
-                document.getElementById('fileExcelVentas').value = ''; // Limpiar input
+                document.getElementById('fileExcelVentas').value = '';
             }
         };
         reader.readAsArrayBuffer(file);
     };
 
-    // ── ELIMINACIÓN CON EXIGENCIA COMPLETA DE CREDENCIALES (USUARIO Y CONTRASEÑA) ──
     window.eliminar = function(id) {
         pendingDeleteId = id;
         document.getElementById('confUser').value = '';
@@ -868,12 +868,6 @@
             document.getElementById('pwError').style.display = 'block';
         }
     };
-
-    // ── RENDERERS GRÁFICOS Y TABLAS ──
-    let barInst = null;
-    let donutInst = null;
-    let lineInst = null;
-    const THEME_COLORS = ['#8a8d91', '#276749', '#9b2c2c', '#975a16', '#6b6b6b'];
 
     window.renderResumen = function() {
         if(currentRol === 'usuario') return;
@@ -907,17 +901,47 @@
         
         const canDelete = (currentUser === 'hethea' || currentUser === 'SSHADMIN' || currentRol === 'admin' || currentRol === 'coadmin');
         
-        document.getElementById('movBody').innerHTML = arr.length ? arr.map(m => `<tr> <td><div style="color:var(--text); font-weight: 500;">${fmtFecha(m.ts)}</div></td> <td><span class="tag" style="background:var(--surface2); color:var(--text);">${m.tienda || 'Online'}</span></td> <td>${m.cat}</td> <td><span class="tag ${m.tipo === 'Ingreso' ? 'tag-i' : m.tipo === 'Egreso' ? 'tag-e' : 'tag-g'}">${m.tipo === 'GastoFijo' ? 'G.Fijo' : m.tipo}</span></td> <td class="${m.tipo === 'Ingreso' ? 'pos' : 'neg'}">${m.tipo === 'Ingreso' ? '+' : '-'}${fmt(parseFloat(m.monto))}</td> <td style="color:var(--muted); font-size: 0.75rem;">${m.usuario || 'hethea'}</td> <td>${(canDelete || m.usuario === currentUser) ? `<button type="button" class="btn btn-ghost btn-s" onclick="eliminar('${m.id}')">✕</button>` : '—'}</td></tr>`).join('') : `<tr><td colspan="7"><div class="empty">Sin actividad registrada en esta selección.</div></td></tr>`;
+        document.getElementById('movBody').innerHTML = arr.length ? arr.map(m => `<tr> <td><div style="color:var(--text); font-weight: 500;">${fmtFecha(m.ts)}</div></td> <td><span class="tag" style="background:var(--surface2); color:var(--text);">${m.tienda || 'Online'}</span></td> <td>${m.cat}</td> <td><span class="tag ${m.tipo === 'Ingreso' ? 'tag-i' : m.tipo === 'Egreso' ? 'tag-e' : 'tag-g'}">${m.tipo === 'GastoFijo' ? 'G.Fijo' : m.tipo}</span></td> <td class="${m.tipo === 'Ingreso' ? 'pos' : 'neg'}">${m.tipo === 'Ingreso' ? '+' : '-'}${fmt(parseFloat(m.monto))}</td> <td style="color:var(--muted); font-size: 0.75rem;">${m.usuario || 'hethea'}</td> <td>${(canDelete || m.usuario === currentUser) ? `<button type="button" class="btn btn-ghost btn-s" onclick="window.eliminar('${m.id}')">✕</button>` : '—'}</td></tr>`).join('') : `<tr><td colspan="7"><div class="empty">Sin actividad registrada en esta selección.</div></td></tr>`;
     };
 
     window.renderAllMov = function() {
         const arr = movs.filter(m => m.mes === mesInp && m.anio === anio && (currentRol === 'admin' || currentRol === 'coadmin' || m.usuario === currentUser));
         const canDelete = (currentUser === 'hethea' || currentUser === 'SSHADMIN' || currentRol === 'admin' || currentRol === 'coadmin');
 
-        document.getElementById('allMovBody').innerHTML = arr.length ? arr.map(m => `<tr> <td><div style="color:var(--text); font-weight: 500;">${fmtFecha(m.ts)}</div></td> <td><span class="tag" style="background:var(--surface2); color:var(--text);">${m.tienda || 'Online'}</span></td> <td>${m.cat}</td> <td><span class="tag ${m.tipo === 'Ingreso' ? 'tag-i' : m.tipo === 'Egreso' ? 'tag-e' : 'tag-g'}">${m.tipo === 'GastoFijo' ? 'G.Fijo' : m.tipo}</span></td> <td class="${m.tipo === 'Ingreso' ? 'pos' : 'neg'}">${fmt(parseFloat(m.monto))}</td> <td style="color:var(--muted);">${m.nota || '—'}</td> <td>${(canDelete || m.usuario === currentUser) ? `<button type="button" class="btn btn-ghost btn-s" onclick="eliminar('${m.id}')">Anular</button>` : '—'}</td></tr>`).join('') : `<tr><td colspan="7"><div class="empty">No has registrado movimientos este mes.</div></td></tr>`;
+        document.getElementById('allMovBody').innerHTML = arr.length ? arr.map(m => `<tr> <td><div style="color:var(--text); font-weight: 500;">${fmtFecha(m.ts)}</div></td> <td><span class="tag" style="background:var(--surface2); color:var(--text);">${m.tienda || 'Online'}</span></td> <td>${m.cat}</td> <td><span class="tag ${m.tipo === 'Ingreso' ? 'tag-i' : m.tipo === 'Egreso' ? 'tag-e' : 'tag-g'}">${m.tipo === 'GastoFijo' ? 'G.Fijo' : m.tipo}</span></td> <td class="${m.tipo === 'Ingreso' ? 'pos' : 'neg'}">${fmt(parseFloat(m.monto))}</td> <td style="color:var(--muted);">${m.nota || '—'}</td> <td>${(canDelete || m.usuario === currentUser) ? `<button type="button" class="btn btn-ghost btn-s" onclick="window.eliminar('${m.id}')">Anular</button>` : '—'}</td></tr>`).join('') : `<tr><td colspan="7"><div class="empty">No has registrado movimientos este mes.</div></td></tr>`;
     };
 
     window.renderAnual = function() {
         if(currentRol === 'usuario') return;
         const tots = MESES.map((_, i) => totMes(i));
-        const sI = tots.reduce((a, d) => a + d.ing, 0), sE = tots.reduce((a, d) => a + d.eg, 0), sG = tots.reduce((
+        const sI = tots.reduce((a, d) => a + d.ing, 0), sE = tots.reduce((a, d) => a + d.eg, 0), sG = tots.reduce((a, d) => a + d.gf, 0), sB = tots.reduce((a, d) => a + d.bal, 0);
+        document.getElementById('anualTable').innerHTML = `<thead><tr><th>Mes</th><th>Ingresos</th><th>Egresos</th><th>G.Fijos</th><th>Balance</th></tr></thead><tbody>${tots.map((d, i) => `<tr> <td style="font-weight:600">${MESES_F[i]}</td> <td class="pos">${fmt(d.ing)}</td><td class="neg">${fmt(d.eg)}</td> <td style="color:var(--warn)">${fmt(d.gf)}</td> <td class="${d.bal >= 0 ? 'pos' : 'neg'}">${fmt(d.bal)}</td></tr>`).join('')} <tr class="total-row"><td>AÑO ${anio}</td><td class="pos">${fmt(sI)}</td><td class="neg">${fmt(sE)}</td><td style="color:var(--warn)">${fmt(sG)}</td><td class="${sB >= 0 ? 'pos' : 'neg'}">${fmt(sB)}</td></tr> </tbody>`;
+        if(lineInst) lineInst.destroy();
+        lineInst = new Chart(document.getElementById('lineChart'), {
+            type: 'line',
+            data: { labels: MESES, datasets: [{ label: 'Ingresos', data: tots.map(d => d.ing), borderColor: '#276749', backgroundColor: 'transparent', tension: 0 }, { label: 'Gastos Tot.', data: tots.map(d => d.eg + d.gf), borderColor: '#9b2c2c', backgroundColor: 'transparent', tension: 0 }, { label: 'Balance', data: tots.map(d => d.bal), borderColor: '#1a1a1a', tension: 0, borderDash: [5, 5] }] },
+            options: { responsive: true, plugins: { legend: { labels: { font: { family: 'Jost' } } } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#f2efe9' } } } }
+        });
+    };
+
+    window.showTab = function(name, btn) {
+        ['resumen', 'ingresar', 'anual', 'usuarios'].forEach(t => { const el = document.getElementById('tab-' + t); if(el) el.style.display = t === name ? 'block' : 'none'; });
+        document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        if(name === 'anual') window.renderAnual();
+    };
+
+    window.exportarExcel = function() {
+        if(!movs.length){ toast('No hay datos.', 'er'); return; }
+        const wb = XLSX.utils.book_new();
+        const rows = [['Año', 'Mes', 'Fecha y Hora Exacta (Trazabilidad)', 'Tienda', 'Tipo', 'Categoría', 'Monto', 'Registrado Por', 'Nota']];
+        movs.sort((a,b) => a.mes - b.mes).forEach(m => { rows.push([m.anio, MESES_F[m.mes], fmtFecha(m.ts), m.tienda || 'Online', m.tipo === 'GastoFijo' ? 'Gasto Fijo' : m.tipo, m.cat, parseFloat(m.monto), m.usuario || 'hethea', m.nota || '']); });
+        const ws1 = XLSX.utils.aoa_to_sheet(rows);
+        ws1['!cols'] = [{ wch: 6 }, { wch: 12 }, { wch: 22 }, { wch: 14 }, { wch: 12 }, { wch: 25 }, { wch: 14 }, { wch: 15 }, { wch: 25 }];
+        XLSX.utils.book_append_sheet(wb, ws1, 'Movimientos');
+        XLSX.writeFile(wb, `Reporte_HETHEA_${anio}.xlsx`);
+        toast('Reporte generado');
+    };
+</script>
+</body>
+</html>
