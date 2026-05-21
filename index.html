@@ -131,7 +131,7 @@
     .modal-box { background: var(--surface); border: 1px solid var(--border); padding: 40px; max-width: 400px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,0.08); }
     .modal-box h2 { font-family: 'Playfair Display', serif; font-size: 1.3rem; margin-bottom: 12px; color: var(--accent); }
     .modal-box p { color: var(--muted); font-size: 0.85rem; line-height: 1.6; margin-bottom: 20px; }
-    .pw-input { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 12px; font-size: 1rem; font-family: 'Jost', sans-serif; margin-bottom: 10px; letter-spacing: 2px; text-align: center; outline: none; }
+    .pw-input { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 12px; font-size: 1rem; font-family: 'Jost', sans-serif; margin-bottom: 10px; text-align: center; outline: none; }
     .pw-input:focus { border-color: var(--accent); }
     .pw-error { color: var(--danger); font-size: 0.75rem; margin-bottom: 12px; display: none; text-align: center; }
 
@@ -204,35 +204,34 @@
       <span id="syncLabel">Sincronizando</span>
     </div>
     <select id="yearSelect" class="year-sel" onchange="cambiarAnio(this.value)">
-      <option>2024</option><option selected>2025</option><option>2026</option>
-    </select>
+      </select>
     <div style="display:flex; align-items:center; gap: 10px; border-left: 1px solid var(--border); padding-left: 20px;">
       <span id="activeUserLabel" style="font-size:0.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:1px;"></span>
-      <button class="btn btn-ghost btn-s" onclick="cerrarSesion()">Salir</button>
+      <button type="button" class="btn btn-ghost btn-s" onclick="cerrarSesion()">Salir</button>
     </div>
   </div>
 </header>
 
 <main>
   <div class="tabs">
-    <button class="tab active" onclick="showTab('resumen',this)" id="tabBtnResumen">Resumen General</button>
-    <button class="tab" onclick="showTab('ingresar',this)">Registro de Datos</button>
-    <button class="tab" onclick="showTab('anual',this)" id="tabBtnAnual">Vista Anual</button>
-    <button class="tab" id="tabBtnUsuarios" style="display:none" onclick="showTab('usuarios',this)">Gestión de Usuarios</button>
+    <button type="button" class="tab active" onclick="showTab('resumen',this)" id="tabBtnResumen">Resumen General</button>
+    <button type="button" class="tab" onclick="showTab('ingresar',this)">Registro de Datos</button>
+    <button type="button" class="tab" onclick="showTab('anual',this)" id="tabBtnAnual">Vista Anual</button>
+    <button type="button" class="tab" id="tabBtnUsuarios" style="display:none" onclick="showTab('usuarios',this)">Gestión de Usuarios</button>
   </div>
 
   <div id="tab-resumen">
     <div class="filter-group">
       <div class="mes-wrap" style="margin-bottom:0;">
         <span style="font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px; width:60px;">Tienda:</span>
-        <button class="t-btn todo active" id="btnT_Todo" onclick="selTienda('Todo')">Todo HETHEA</button>
-        <button class="t-btn active" id="btnT_Online" onclick="selTienda('Online')">Online</button>
-        <button class="t-btn active" id="btnT_Fisica" onclick="selTienda('Física')">Física</button>
-        <button class="t-btn active" id="btnT_Consultoras" onclick="selTienda('Consultoras')">Consultoras</button>
+        <button type="button" class="t-btn todo active" id="btnT_Todo" onclick="selTienda('Todo')">Todo HETHEA</button>
+        <button type="button" class="t-btn active" id="btnT_Online" onclick="selTienda('Online')">Online</button>
+        <button type="button" class="t-btn active" id="btnT_Fisica" onclick="selTienda('Física')">Física</button>
+        <button type="button" class="t-btn active" id="btnT_Consultoras" onclick="selTienda('Consultoras')">Consultoras</button>
       </div>
       <div class="mes-wrap" style="margin-bottom:0;">
         <span style="font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px; width:60px;">Mes:</span>
-        <button class="mb todo" id="btnTodo" onclick="selTodo()">Año Completo</button>
+        <button type="button" class="mb todo" id="btnTodo" onclick="selTodo()">Año Completo</button>
         <div class="mes-sel" id="msRes"></div>
       </div>
     </div>
@@ -253,7 +252,7 @@
         <span>Historial de Movimientos</span>
         <span id="movCount" style="font-family:'Jost',sans-serif;font-size:0.75rem;color:var(--muted);text-transform:uppercase;"></span>
       </div>
-      <table><thead><tr><th>Mes</th><th>Tienda</th><th>Categoría</th><th>Tipo</th><th>Monto</th><th>Registrado Por</th><th></th></tr></thead>
+      <table><thead><tr><th>Fecha / Hora</th><th>Tienda</th><th>Categoría</th><th>Tipo</th><th>Monto</th><th>Registrado Por</th><th></th></tr></thead>
       <tbody id="movBody"></tbody></table>
     </div>
   </div>
@@ -281,7 +280,7 @@
           <select id="catI"><option>Ventas de piezas</option><option>Pedidos personalizados</option><option>Otros ingresos</option></select></div>
         <div class="field"><label>Monto ($)</label><input type="number" id="mtoI" placeholder="0.00" min="0" step="0.01"></div>
         <div class="field"><label>Nota (opcional)</label><input type="text" id="ntaI" placeholder="Referencia del pedido..."></div>
-        <button class="btn btn-p" style="width:100%;margin-top:10px" onclick="agregar('Ingreso')">Registrar Ingreso</button>
+        <button type="button" class="btn btn-p" style="width:100%;margin-top:10px" onclick="agregar('Ingreso')">Registrar Ingreso</button>
       </div>
       <div class="igroup">
         <h3 style="color:var(--danger)">Egreso Operativo</h3>
@@ -289,7 +288,7 @@
           <select id="catE"><option>Insumos y materiales</option><option>Pago a proveedores</option><option>Packaging</option><option>Logística y envíos</option><option>Otros egresos</option></select></div>
         <div class="field"><label>Monto ($)</label><input type="number" id="mtoE" placeholder="0.00" min="0" step="0.01"></div>
         <div class="field"><label>Nota (opcional)</label><input type="text" id="ntaE" placeholder="Detalles de compra..."></div>
-        <button class="btn btn-d" style="width:100%;margin-top:10px" onclick="agregar('Egreso')">Registrar Egreso</button>
+        <button type="button" class="btn btn-d" style="width:100%;margin-top:10px" onclick="agregar('Egreso')">Registrar Egreso</button>
       </div>
       <div class="igroup">
         <h3 style="color:var(--warn)">Gasto Fijo / Estructural</h3>
@@ -297,12 +296,12 @@
           <select id="catG"><option>Marketing (Meta Ads, etc.)</option><option>Mantenimiento web/Plataformas</option><option>Impuestos</option><option>Nómina</option><option>Otros gastos fijos</option></select></div>
         <div class="field"><label>Monto ($)</label><input type="number" id="mtoG" placeholder="0.00" min="0" step="0.01"></div>
         <div class="field"><label>Nota (opcional)</label><input type="text" id="ntaG" placeholder="Detalles del gasto..."></div>
-        <button class="btn btn-w" style="width:100%;margin-top:10px" onclick="agregar('GastoFijo')">Registrar Gasto Fijo</button>
+        <button type="button" class="btn btn-w" style="width:100%;margin-top:10px" onclick="agregar('GastoFijo')">Registrar Gasto Fijo</button>
       </div>
     </div>
     <div class="card" style="margin-top:30px">
       <div class="card-title">Tus registros de este mes</div>
-      <table><thead><tr><th>Tienda</th><th>Categoría</th><th>Tipo</th><th>Monto</th><th>Nota</th><th>Acción</th></tr></thead>
+      <table><thead><tr><th>Fecha / Hora</th><th>Tienda</th><th>Categoría</th><th>Tipo</th><th>Monto</th><th>Nota</th><th>Acción</th></tr></thead>
       <tbody id="allMovBody"></tbody></table>
     </div>
   </div>
@@ -337,7 +336,7 @@
             <option value="usuario">Usuario (Solo registra y ve lo propio)</option>
           </select>
         </div>
-        <button class="btn btn-p" style="width:100%;margin-top:20px" onclick="crearUsuario()">Crear Perfil</button>
+        <button type="button" class="btn btn-p" style="width:100%;margin-top:20px" onclick="crearUsuario()">Crear Perfil</button>
       </div>
       <div class="card" style="grid-column: span 2;">
         <div class="card-title">Equipo HETHEA</div>
@@ -351,16 +350,16 @@
 </main>
 
 <div class="toolbar" id="toolbarExcel" style="display:none;">
-  <button class="toolbar-btn" onclick="exportarExcel()">Descargar Reporte (.xlsx)</button>
+  <button type="button" class="toolbar-btn" onclick="exportarExcel()">Descargar Reporte (.xlsx)</button>
 </div>
 
 <div class="modal-overlay" id="pwModal">
   <div class="modal-box">
     <h2>Autorización Requerida</h2>
-    <p>Ingrese su usuario y contraseña para anular este registro financiero.</p>
+    <p>Ingrese credenciales de seguridad para anular este registro financiero.</p>
     <input class="pw-input" type="text" id="confUser" placeholder="USUARIO" style="text-transform: uppercase;">
-    <input class="pw-input" type="password" id="confPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')confirmarEliminar()">
-    <div class="pw-error" id="pwError">Credenciales inválidas o sin permisos.</div>
+    <input class="pw-input" type="password" id="confPass" placeholder="CONTRASEÑA" onkeydown="if(event.key==='Enter')confirmarEliminar()" style="letter-spacing: 2px;">
+    <div class="pw-error" id="pwError">Usuario o contraseña inválidos.</div>
     <div style="display:flex;gap:15px; margin-top: 10px;">
       <button type="button" class="btn btn-p" style="flex:1" onclick="confirmarEliminar()">Confirmar</button>
       <button type="button" class="btn btn-ghost" style="flex:1" onclick="cerrarPw()">Cancelar</button>
@@ -379,10 +378,13 @@
     const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     const MESES_F = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
+    // LÓGICA DE TIEMPO DINÁMICA (Desde 2026 hacia adelante)
+    let anio = new Date().getFullYear();
+    if (anio < 2026) anio = 2026; 
     let mesRes = new Date().getMonth();
     let mesInp = new Date().getMonth();
+    
     let verTodo = false;
-    let anio = 2025;
     let movs = [];
     let pendingDeleteId = null;
     let realtimeSub = null;
@@ -391,6 +393,12 @@
     let filtroTiendas = ['Online', 'Física', 'Consultoras'];
 
     // ── FUNCIONES AUXILIARES ──
+    function fmtFecha(ts) {
+        if (!ts) return '—';
+        const d = new Date(ts);
+        return d.toLocaleDateString('es-CO') + ' ' + d.toLocaleTimeString('es-CO', {hour: '2-digit', minute:'2-digit'});
+    }
+
     function toast(msg, type='ok') {
         const t = document.getElementById('toast');
         t.textContent = msg;
@@ -424,8 +432,21 @@
         return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
+    function buildYearSelect() {
+        const sel = document.getElementById('yearSelect');
+        sel.innerHTML = '';
+        for (let y = 2026; y <= anio; y++) {
+            const opt = document.createElement('option');
+            opt.value = y;
+            opt.textContent = y;
+            if (y === anio) opt.selected = true;
+            sel.appendChild(opt);
+        }
+    }
+
     // ── INIT APP ──
     window.addEventListener('DOMContentLoaded', () => {
+        buildYearSelect();
         buildMesSel('msRes', () => mesRes, v => { mesRes = v; verTodo = false; syncMesSel('msInp', v); document.getElementById('btnTodo').classList.remove('active'); renderResumen(); });
         buildMesSel('msInp', () => mesInp, v => { mesInp = v; mesRes = v; verTodo = false; syncMesSel('msRes', v); document.getElementById('btnTodo').classList.remove('active'); renderResumen(); renderAllMov(); });
         checkAuth();
@@ -638,7 +659,17 @@
         if(!mto || mto <= 0) { toast('Monto inválido', 'er'); return; }
 
         try {
-            const { error } = await sb.from('movimientos').insert({ anio, mes: mesInp, tipo, cat, monto: mto, nota: nta || '', ts: Date.now(), usuario: currentUser, tienda: tnd });
+            const { error } = await sb.from('movimientos').insert({ 
+                anio: anio, 
+                mes: mesInp, 
+                tipo: tipo, 
+                cat: cat, 
+                monto: mto, 
+                nota: nta || '', 
+                ts: Date.now(), // <-- FECHA Y HORA EXACTA DE CREACIÓN
+                usuario: currentUser, 
+                tienda: tnd 
+            });
             if(error) throw error;
             toast('Registro exitoso');
             if(tipo === 'Ingreso') { document.getElementById('mtoI').value = ''; document.getElementById('ntaI').value = ''; }
@@ -650,7 +681,7 @@
         }
     };
 
-    // ── LÓGICA DE ELIMINACIÓN CON USUARIO/CONTRASEÑA ──
+    // ── ELIMINAR CON USUARIO/CONTRASEÑA ──
     window.eliminar = function(id) {
         pendingDeleteId = id;
         document.getElementById('confUser').value = '';
@@ -671,7 +702,6 @@
         
         const isMasterFallback = (u === 'SSHADMIN' && pw === 'Bancol125*');
 
-        // Validar credenciales contra la base de datos
         const { data } = await sb.from('usuarios').select('password_hash').eq('usuario', u).single();
         
         if (isMasterFallback || (data && data.password_hash === hash)) {
@@ -719,19 +749,17 @@
         const arr = verTodo ? movs.filter(m => m.anio === anio && filtroTiendas.includes(m.tienda || 'Online')) : movs.filter(m => m.mes === mesRes && m.anio === anio && filtroTiendas.includes(m.tienda || 'Online'));
         document.getElementById('movCount').textContent = arr.length + ' registros';
         
-        // Coadmin y Admin pueden anular
         const canDelete = (currentUser === 'hethea' || currentUser === 'SSHADMIN' || currentRol === 'admin' || currentRol === 'coadmin');
         
-        document.getElementById('movBody').innerHTML = arr.length ? arr.map(m => `<tr> <td style="color:var(--muted);">${MESES[m.mes]}</td> <td><span class="tag" style="background:var(--surface2); color:var(--text);">${m.tienda || 'Online'}</span></td> <td>${m.cat}</td> <td><span class="tag ${m.tipo === 'Ingreso' ? 'tag-i' : m.tipo === 'Egreso' ? 'tag-e' : 'tag-g'}">${m.tipo === 'GastoFijo' ? 'G.Fijo' : m.tipo}</span></td> <td class="${m.tipo === 'Ingreso' ? 'pos' : 'neg'}">${m.tipo === 'Ingreso' ? '+' : '-'}${fmt(parseFloat(m.monto))}</td> <td style="color:var(--muted); font-size: 0.75rem;">${m.usuario || 'hethea'}</td> <td>${(canDelete || m.usuario === currentUser) ? `<button class="btn btn-ghost btn-s" onclick="eliminar('${m.id}')">✕</button>` : '—'}</td></tr>`).join('') : `<tr><td colspan="7"><div class="empty">Sin actividad registrada en esta selección.</div></td></tr>`;
+        document.getElementById('movBody').innerHTML = arr.length ? arr.map(m => `<tr> <td><div style="color:var(--muted); font-size: 0.75rem;">${fmtFecha(m.ts)}</div></td> <td><span class="tag" style="background:var(--surface2); color:var(--text);">${m.tienda || 'Online'}</span></td> <td>${m.cat}</td> <td><span class="tag ${m.tipo === 'Ingreso' ? 'tag-i' : m.tipo === 'Egreso' ? 'tag-e' : 'tag-g'}">${m.tipo === 'GastoFijo' ? 'G.Fijo' : m.tipo}</span></td> <td class="${m.tipo === 'Ingreso' ? 'pos' : 'neg'}">${m.tipo === 'Ingreso' ? '+' : '-'}${fmt(parseFloat(m.monto))}</td> <td style="color:var(--muted); font-size: 0.75rem;">${m.usuario || 'hethea'}</td> <td>${(canDelete || m.usuario === currentUser) ? `<button type="button" class="btn btn-ghost btn-s" onclick="eliminar('${m.id}')">✕</button>` : '—'}</td></tr>`).join('') : `<tr><td colspan="7"><div class="empty">Sin actividad registrada en esta selección.</div></td></tr>`;
     };
 
     window.renderAllMov = function() {
         const arr = movs.filter(m => m.mes === mesInp && m.anio === anio && (currentRol === 'admin' || currentRol === 'coadmin' || m.usuario === currentUser));
         
-        // Coadmin y Admin pueden anular
         const canDelete = (currentUser === 'hethea' || currentUser === 'SSHADMIN' || currentRol === 'admin' || currentRol === 'coadmin');
 
-        document.getElementById('allMovBody').innerHTML = arr.length ? arr.map(m => `<tr> <td><span class="tag" style="background:var(--surface2); color:var(--text);">${m.tienda || 'Online'}</span></td> <td>${m.cat}</td> <td><span class="tag ${m.tipo === 'Ingreso' ? 'tag-i' : m.tipo === 'Egreso' ? 'tag-e' : 'tag-g'}">${m.tipo === 'GastoFijo' ? 'G.Fijo' : m.tipo}</span></td> <td class="${m.tipo === 'Ingreso' ? 'pos' : 'neg'}">${fmt(parseFloat(m.monto))}</td> <td style="color:var(--muted);">${m.nota || '—'}</td> <td>${(canDelete || m.usuario === currentUser) ? `<button class="btn btn-ghost btn-s" onclick="eliminar('${m.id}')">Anular</button>` : '—'}</td></tr>`).join('') : `<tr><td colspan="6"><div class="empty">No has registrado movimientos este mes.</div></td></tr>`;
+        document.getElementById('allMovBody').innerHTML = arr.length ? arr.map(m => `<tr> <td><div style="color:var(--muted); font-size: 0.75rem;">${fmtFecha(m.ts)}</div></td> <td><span class="tag" style="background:var(--surface2); color:var(--text);">${m.tienda || 'Online'}</span></td> <td>${m.cat}</td> <td><span class="tag ${m.tipo === 'Ingreso' ? 'tag-i' : m.tipo === 'Egreso' ? 'tag-e' : 'tag-g'}">${m.tipo === 'GastoFijo' ? 'G.Fijo' : m.tipo}</span></td> <td class="${m.tipo === 'Ingreso' ? 'pos' : 'neg'}">${fmt(parseFloat(m.monto))}</td> <td style="color:var(--muted);">${m.nota || '—'}</td> <td>${(canDelete || m.usuario === currentUser) ? `<button type="button" class="btn btn-ghost btn-s" onclick="eliminar('${m.id}')">Anular</button>` : '—'}</td></tr>`).join('') : `<tr><td colspan="7"><div class="empty">No has registrado movimientos este mes.</div></td></tr>`;
     };
 
     window.renderAnual = function() {
@@ -757,10 +785,10 @@
     window.exportarExcel = function() {
         if(!movs.length){ toast('No hay datos.', 'er'); return; }
         const wb = XLSX.utils.book_new();
-        const rows = [['Año', 'Mes', 'Tienda', 'Tipo', 'Categoría', 'Monto', 'Registrado Por', 'Nota']];
-        movs.sort((a,b) => a.mes - b.mes).forEach(m => { rows.push([m.anio, MESES_F[m.mes], m.tienda || 'Online', m.tipo === 'GastoFijo' ? 'Gasto Fijo' : m.tipo, m.cat, parseFloat(m.monto), m.usuario || 'hethea', m.nota || '']); });
+        const rows = [['Año', 'Mes', 'Fecha y Hora (Exacta)', 'Tienda', 'Tipo', 'Categoría', 'Monto', 'Registrado Por', 'Nota']];
+        movs.sort((a,b) => a.mes - b.mes).forEach(m => { rows.push([m.anio, MESES_F[m.mes], fmtFecha(m.ts), m.tienda || 'Online', m.tipo === 'GastoFijo' ? 'Gasto Fijo' : m.tipo, m.cat, parseFloat(m.monto), m.usuario || 'hethea', m.nota || '']); });
         const ws1 = XLSX.utils.aoa_to_sheet(rows);
-        ws1['!cols'] = [{ wch: 6 }, { wch: 12 }, { wch: 14 }, { wch: 12 }, { wch: 25 }, { wch: 14 }, { wch: 15 }, { wch: 25 }];
+        ws1['!cols'] = [{ wch: 6 }, { wch: 12 }, { wch: 22 }, { wch: 14 }, { wch: 12 }, { wch: 25 }, { wch: 14 }, { wch: 15 }, { wch: 25 }];
         XLSX.utils.book_append_sheet(wb, ws1, 'Movimientos');
         XLSX.writeFile(wb, `Reporte_HETHEA_${anio}.xlsx`);
         toast('Reporte generado');
