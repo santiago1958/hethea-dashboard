@@ -404,6 +404,13 @@
     const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     const MESES_F = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
+    // ── FIX 1: THEME_COLORS definido correctamente ──
+    const THEME_COLORS = [
+        '#276749', '#9b2c2c', '#975a16', '#2b6cb0',
+        '#553c9a', '#b7791f', '#1a6b5e', '#c53030',
+        '#2c5282', '#744210', '#276749', '#702459'
+    ];
+
     let anio = new Date().getFullYear();
     if (anio < 2026) {
         anio = 2026;
@@ -418,6 +425,11 @@
     let currentRol = '';
     let currentUser = '';
     let filtroTiendas = ['Online', 'Física', 'Consultoras'];
+
+    // ── FIX 2: Variables de instancias de gráficas declaradas globalmente ──
+    let barInst = null;
+    let donutInst = null;
+    let lineInst = null;
 
     function fmtFecha(ts) {
         if (!ts) return '—';
@@ -462,7 +474,6 @@
         const p = document.getElementById('loginPass');
         const b = document.getElementById('eyeBtn');
         if (!p || !b) return;
-        
         if (p.type === 'password') {
             p.type = 'text';
             b.textContent = 'OCULTAR';
@@ -478,7 +489,6 @@
         document.getElementById('statusBar').className = state === 'live' ? 'ok' : state === 'err' ? 'err' : 'loading';
     }
 
-    // Respaldo de seguridad en caso de ejecución local sin HTTPS
     async function hashStr(str) {
         if (!window.crypto || !window.crypto.subtle) {
             console.warn("crypto.subtle bloqueado por el navegador local. Generando hash alternativo.");
@@ -658,14 +668,40 @@
         if(document.getElementById('tab-anual').style.display === 'block') window.renderAnual();
     };
 
+    // ── FIX 3: cargarDatos corregido — renderiza siempre y activa "Año Completo" si no hay datos en el mes activo ──
     async function cargarDatos() {
         setSyncStatus('loading', 'Sincronizando...');
         const { data, error } = await sb.from('movimientos').select('*').eq('anio', anio).order('ts', { ascending: false });
         if (error) { setSyncStatus('err', 'Error'); console.error(error); return; }
-        movs = (currentRol === 'usuario') ? data.filter(m => m.usuario === currentUser) : (data || []);
+
+        movs = (currentRol === 'usuario')
+            ? (data || []).filter(m => m.usuario === currentUser)
+            : (data || []);
+
         setSyncStatus('live', 'En línea');
-        if(currentRol !== 'usuario') { window.renderResumen(); window.renderAnual(); }
+
+        // Renderizar siempre los movimientos del tab de ingreso
         window.renderAllMov();
+
+        // Renderizar resumen y anual solo para admin/coadmin
+        if (currentRol !== 'usuario') {
+            // Si no hay datos en el mes activo pero sí hay datos en el año,
+            // activar automáticamente "Año Completo" para que los datos importados sean visibles
+            const tieneDataEnMes = movs.some(m =>
+                m.anio === anio &&
+                m.mes === mesRes &&
+                filtroTiendas.includes(m.tienda || 'Online')
+            );
+            if (!verTodo && !tieneDataEnMes && movs.length > 0) {
+                verTodo = true;
+                const btnTodo = document.getElementById('btnTodo');
+                if (btnTodo) btnTodo.classList.add('active');
+                // Desactivar botones de mes individuales
+                document.querySelectorAll('#msRes .mb').forEach(b => b.classList.remove('active'));
+            }
+            window.renderResumen();
+            window.renderAnual();
+        }
     }
 
     function suscribirRealtime() {
@@ -762,10 +798,11 @@
                 const ventasMap = new Map();
 
                 rows.forEach(row => {
-                    const numPedido = row['Pedido #'] || row['Pedido'];
-                    const fechaRaw = row['Fecha'] || row['Date'];
-                    const montoRaw = row['Ventas netas'] || row['Total'];
-                    const prods = row['Producto(s)'] || row['Productos'];
+                    // ── FIX 4: Mapeo de columnas más flexible para distintos exportadores ──
+                    const numPedido = row['Pedido #'] || row['Pedido'] || row['Order'] || row['#'] || row['order_id'];
+                    const fechaRaw = row['Fecha'] || row['Date'] || row['Created at'] || row['created_at'];
+                    const montoRaw = row['Ventas netas'] || row['Total'] || row['Subtotal'] || row['total_price'];
+                    const prods = row['Producto(s)'] || row['Productos'] || row['Lineitem name'] || row['Items'] || row['line_items'];
 
                     if(numPedido && montoRaw !== undefined) {
                         const monto = parseFloat(montoRaw.toString().replace(/[^0-9.-]+/g,""));
@@ -781,7 +818,7 @@
                     }
                 });
 
-                if(ventasMap.size === 0) throw new Error('Columnas requeridas no encontradas.');
+                if(ventasMap.size === 0) throw new Error('Columnas requeridas no encontradas. Verifica que el Excel tenga: Pedido #, Fecha, Ventas netas.');
 
                 status.textContent = 'Sincronizando con base de datos...';
 
@@ -875,57 +912,167 @@
         const tiendasLbl = filtroTiendas.length === 3 ? "Todo HETHEA" : filtroTiendas.join(" + ");
         document.getElementById('chartLbl').textContent = lbl + " | " + tiendasLbl;
         const { ing, eg, gf, bal } = verTodo ? totAnio() : totMes(mesRes);
-        document.getElementById('kpis').innerHTML = ` <div class="kpi ing"><div class="kpi-label">Ingresos Brutos</div><div class="kpi-value">${fmt(ing)}</div><div class="kpi-sub">${lbl}</div></div> <div class="kpi eg"><div class="kpi-label">Egresos Operativos</div><div class="kpi-value">${fmt(eg)}</div><div class="kpi-sub">${lbl}</div></div> <div class="kpi gf"><div class="kpi-label">Gastos Estructurales</div><div class="kpi-value">${fmt(gf)}</div><div class="kpi-sub">${lbl}</div></div> <div class="kpi bal" style="border-bottom: 3px solid ${bal >= 0 ? 'var(--green)' : 'var(--danger)'}"><div class="kpi-label">Balance Neto</div><div class="kpi-value ${bal < 0 ? 'neg' : ''}">${fmt(bal)}</div><div class="kpi-sub">Rentabilidad del periodo</div></div>`;
+        document.getElementById('kpis').innerHTML = `
+            <div class="kpi ing">
+                <div class="kpi-label">Ingresos Brutos</div>
+                <div class="kpi-value">${fmt(ing)}</div>
+                <div class="kpi-sub">${lbl}</div>
+            </div>
+            <div class="kpi eg">
+                <div class="kpi-label">Egresos Operativos</div>
+                <div class="kpi-value">${fmt(eg)}</div>
+                <div class="kpi-sub">${lbl}</div>
+            </div>
+            <div class="kpi gf">
+                <div class="kpi-label">Gastos Estructurales</div>
+                <div class="kpi-value">${fmt(gf)}</div>
+                <div class="kpi-sub">${lbl}</div>
+            </div>
+            <div class="kpi bal" style="border-bottom: 3px solid ${bal >= 0 ? 'var(--green)' : 'var(--danger)'}">
+                <div class="kpi-label">Balance Neto</div>
+                <div class="kpi-value ${bal < 0 ? 'neg' : ''}">${fmt(bal)}</div>
+                <div class="kpi-sub">Rentabilidad del periodo</div>
+            </div>`;
         
         const d12 = MESES.map((_, i) => totMes(i));
-        if(barInst) barInst.destroy();
+
+        // ── FIX 5: Destruir instancias anteriores correctamente antes de crear nuevas ──
+        if(barInst) { barInst.destroy(); barInst = null; }
         barInst = new Chart(document.getElementById('barChart'), {
             type: 'bar',
-            data: { labels: MESES, datasets: [{ label: 'Ingresos', data: d12.map(d => d.ing), backgroundColor: '#276749' }, { label: 'Egresos', data: d12.map(d => d.eg), backgroundColor: '#9b2c2c' }, { label: 'G. Fijos', data: d12.map(d => d.gf), backgroundColor: '#975a16' }] },
-            options: { responsive: true, plugins: { legend: { labels: { font: { family: 'Jost' } } } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#f2efe9' } } } }
+            data: {
+                labels: MESES,
+                datasets: [
+                    { label: 'Ingresos', data: d12.map(d => d.ing), backgroundColor: '#276749' },
+                    { label: 'Egresos', data: d12.map(d => d.eg), backgroundColor: '#9b2c2c' },
+                    { label: 'G. Fijos', data: d12.map(d => d.gf), backgroundColor: '#975a16' }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { labels: { font: { family: 'Jost' } } } },
+                scales: { x: { grid: { display: false } }, y: { grid: { color: '#f2efe9' } } }
+            }
         });
         
         const cats = {};
-        const filtro = verTodo ? movs.filter(m => m.anio === anio && m.tipo !== 'Ingreso' && filtroTiendas.includes(m.tienda || 'Online')) : movs.filter(m => m.mes === mesRes && m.anio === anio && m.tipo !== 'Ingreso' && filtroTiendas.includes(m.tienda || 'Online'));
+        const filtro = verTodo
+            ? movs.filter(m => m.anio === anio && m.tipo !== 'Ingreso' && filtroTiendas.includes(m.tienda || 'Online'))
+            : movs.filter(m => m.mes === mesRes && m.anio === anio && m.tipo !== 'Ingreso' && filtroTiendas.includes(m.tienda || 'Online'));
         filtro.forEach(m => { cats[m.cat] = (cats[m.cat] || 0) + parseFloat(m.monto); });
-        if(donutInst) donutInst.destroy();
+
+        if(donutInst) { donutInst.destroy(); donutInst = null; }
         const lbls = Object.keys(cats), vals = Object.values(cats);
         donutInst = new Chart(document.getElementById('donutChart'), {
             type: 'doughnut',
-            data: { labels: lbls.length ? lbls : ['Sin datos'], datasets: [{ data: vals.length ? vals : [1], backgroundColor: vals.length ? THEME_COLORS : ['#f2efe9'], borderWidth: 0 }] },
-            options: { responsive: true, cutout: '75%', plugins: { legend: { position: 'right', labels: { font: { family: 'Jost' }, boxWidth: 12 } } } }
+            data: {
+                labels: lbls.length ? lbls : ['Sin datos'],
+                datasets: [{
+                    data: vals.length ? vals : [1],
+                    backgroundColor: vals.length ? THEME_COLORS.slice(0, vals.length) : ['#f2efe9'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                cutout: '75%',
+                plugins: { legend: { position: 'right', labels: { font: { family: 'Jost' }, boxWidth: 12 } } }
+            }
         });
 
-        const arr = verTodo ? movs.filter(m => m.anio === anio && filtroTiendas.includes(m.tienda || 'Online')) : movs.filter(m => m.mes === mesRes && m.anio === anio && filtroTiendas.includes(m.tienda || 'Online'));
+        const arr = verTodo
+            ? movs.filter(m => m.anio === anio && filtroTiendas.includes(m.tienda || 'Online'))
+            : movs.filter(m => m.mes === mesRes && m.anio === anio && filtroTiendas.includes(m.tienda || 'Online'));
         document.getElementById('movCount').textContent = arr.length + ' registros';
         
         const canDelete = (currentUser === 'hethea' || currentUser === 'SSHADMIN' || currentRol === 'admin' || currentRol === 'coadmin');
         
-        document.getElementById('movBody').innerHTML = arr.length ? arr.map(m => `<tr> <td><div style="color:var(--text); font-weight: 500;">${fmtFecha(m.ts)}</div></td> <td><span class="tag" style="background:var(--surface2); color:var(--text);">${m.tienda || 'Online'}</span></td> <td>${m.cat}</td> <td><span class="tag ${m.tipo === 'Ingreso' ? 'tag-i' : m.tipo === 'Egreso' ? 'tag-e' : 'tag-g'}">${m.tipo === 'GastoFijo' ? 'G.Fijo' : m.tipo}</span></td> <td class="${m.tipo === 'Ingreso' ? 'pos' : 'neg'}">${m.tipo === 'Ingreso' ? '+' : '-'}${fmt(parseFloat(m.monto))}</td> <td style="color:var(--muted); font-size: 0.75rem;">${m.usuario || 'hethea'}</td> <td>${(canDelete || m.usuario === currentUser) ? `<button type="button" class="btn btn-ghost btn-s" onclick="window.eliminar('${m.id}')">✕</button>` : '—'}</td></tr>`).join('') : `<tr><td colspan="7"><div class="empty">Sin actividad registrada en esta selección.</div></td></tr>`;
+        document.getElementById('movBody').innerHTML = arr.length
+            ? arr.map(m => `
+                <tr>
+                    <td><div style="color:var(--text); font-weight: 500;">${fmtFecha(m.ts)}</div></td>
+                    <td><span class="tag" style="background:var(--surface2); color:var(--text);">${m.tienda || 'Online'}</span></td>
+                    <td>${m.cat}</td>
+                    <td><span class="tag ${m.tipo === 'Ingreso' ? 'tag-i' : m.tipo === 'Egreso' ? 'tag-e' : 'tag-g'}">${m.tipo === 'GastoFijo' ? 'G.Fijo' : m.tipo}</span></td>
+                    <td class="${m.tipo === 'Ingreso' ? 'pos' : 'neg'}">${m.tipo === 'Ingreso' ? '+' : '-'}${fmt(parseFloat(m.monto))}</td>
+                    <td style="color:var(--muted); font-size: 0.75rem;">${m.usuario || 'hethea'}</td>
+                    <td>${(canDelete || m.usuario === currentUser) ? `<button type="button" class="btn btn-ghost btn-s" onclick="window.eliminar('${m.id}')">✕</button>` : '—'}</td>
+                </tr>`).join('')
+            : `<tr><td colspan="7"><div class="empty">Sin actividad registrada en esta selección.</div></td></tr>`;
     };
 
     window.renderAllMov = function() {
         const arr = movs.filter(m => m.mes === mesInp && m.anio === anio && (currentRol === 'admin' || currentRol === 'coadmin' || m.usuario === currentUser));
         const canDelete = (currentUser === 'hethea' || currentUser === 'SSHADMIN' || currentRol === 'admin' || currentRol === 'coadmin');
 
-        document.getElementById('allMovBody').innerHTML = arr.length ? arr.map(m => `<tr> <td><div style="color:var(--text); font-weight: 500;">${fmtFecha(m.ts)}</div></td> <td><span class="tag" style="background:var(--surface2); color:var(--text);">${m.tienda || 'Online'}</span></td> <td>${m.cat}</td> <td><span class="tag ${m.tipo === 'Ingreso' ? 'tag-i' : m.tipo === 'Egreso' ? 'tag-e' : 'tag-g'}">${m.tipo === 'GastoFijo' ? 'G.Fijo' : m.tipo}</span></td> <td class="${m.tipo === 'Ingreso' ? 'pos' : 'neg'}">${fmt(parseFloat(m.monto))}</td> <td style="color:var(--muted);">${m.nota || '—'}</td> <td>${(canDelete || m.usuario === currentUser) ? `<button type="button" class="btn btn-ghost btn-s" onclick="window.eliminar('${m.id}')">Anular</button>` : '—'}</td></tr>`).join('') : `<tr><td colspan="7"><div class="empty">No has registrado movimientos este mes.</div></td></tr>`;
+        document.getElementById('allMovBody').innerHTML = arr.length
+            ? arr.map(m => `
+                <tr>
+                    <td><div style="color:var(--text); font-weight: 500;">${fmtFecha(m.ts)}</div></td>
+                    <td><span class="tag" style="background:var(--surface2); color:var(--text);">${m.tienda || 'Online'}</span></td>
+                    <td>${m.cat}</td>
+                    <td><span class="tag ${m.tipo === 'Ingreso' ? 'tag-i' : m.tipo === 'Egreso' ? 'tag-e' : 'tag-g'}">${m.tipo === 'GastoFijo' ? 'G.Fijo' : m.tipo}</span></td>
+                    <td class="${m.tipo === 'Ingreso' ? 'pos' : 'neg'}">${fmt(parseFloat(m.monto))}</td>
+                    <td style="color:var(--muted);">${m.nota || '—'}</td>
+                    <td>${(canDelete || m.usuario === currentUser) ? `<button type="button" class="btn btn-ghost btn-s" onclick="window.eliminar('${m.id}')">Anular</button>` : '—'}</td>
+                </tr>`).join('')
+            : `<tr><td colspan="7"><div class="empty">No hay movimientos registrados en este mes.</div></td></tr>`;
     };
 
     window.renderAnual = function() {
         if(currentRol === 'usuario') return;
         const tots = MESES.map((_, i) => totMes(i));
-        const sI = tots.reduce((a, d) => a + d.ing, 0), sE = tots.reduce((a, d) => a + d.eg, 0), sG = tots.reduce((a, d) => a + d.gf, 0), sB = tots.reduce((a, d) => a + d.bal, 0);
-        document.getElementById('anualTable').innerHTML = `<thead><tr><th>Mes</th><th>Ingresos</th><th>Egresos</th><th>G.Fijos</th><th>Balance</th></tr></thead><tbody>${tots.map((d, i) => `<tr> <td style="font-weight:600">${MESES_F[i]}</td> <td class="pos">${fmt(d.ing)}</td><td class="neg">${fmt(d.eg)}</td> <td style="color:var(--warn)">${fmt(d.gf)}</td> <td class="${d.bal >= 0 ? 'pos' : 'neg'}">${fmt(d.bal)}</td></tr>`).join('')} <tr class="total-row"><td>AÑO ${anio}</td><td class="pos">${fmt(sI)}</td><td class="neg">${fmt(sE)}</td><td style="color:var(--warn)">${fmt(sG)}</td><td class="${sB >= 0 ? 'pos' : 'neg'}">${fmt(sB)}</td></tr> </tbody>`;
-        if(lineInst) lineInst.destroy();
+        const sI = tots.reduce((a, d) => a + d.ing, 0);
+        const sE = tots.reduce((a, d) => a + d.eg, 0);
+        const sG = tots.reduce((a, d) => a + d.gf, 0);
+        const sB = tots.reduce((a, d) => a + d.bal, 0);
+        document.getElementById('anualTable').innerHTML = `
+            <thead>
+                <tr><th>Mes</th><th>Ingresos</th><th>Egresos</th><th>G.Fijos</th><th>Balance</th></tr>
+            </thead>
+            <tbody>
+                ${tots.map((d, i) => `
+                    <tr>
+                        <td style="font-weight:600">${MESES_F[i]}</td>
+                        <td class="pos">${fmt(d.ing)}</td>
+                        <td class="neg">${fmt(d.eg)}</td>
+                        <td style="color:var(--warn)">${fmt(d.gf)}</td>
+                        <td class="${d.bal >= 0 ? 'pos' : 'neg'}">${fmt(d.bal)}</td>
+                    </tr>`).join('')}
+                <tr class="total-row">
+                    <td>AÑO ${anio}</td>
+                    <td class="pos">${fmt(sI)}</td>
+                    <td class="neg">${fmt(sE)}</td>
+                    <td style="color:var(--warn)">${fmt(sG)}</td>
+                    <td class="${sB >= 0 ? 'pos' : 'neg'}">${fmt(sB)}</td>
+                </tr>
+            </tbody>`;
+
+        // ── FIX 6: Destruir instancia de lineChart antes de recrear ──
+        if(lineInst) { lineInst.destroy(); lineInst = null; }
         lineInst = new Chart(document.getElementById('lineChart'), {
             type: 'line',
-            data: { labels: MESES, datasets: [{ label: 'Ingresos', data: tots.map(d => d.ing), borderColor: '#276749', backgroundColor: 'transparent', tension: 0 }, { label: 'Gastos Tot.', data: tots.map(d => d.eg + d.gf), borderColor: '#9b2c2c', backgroundColor: 'transparent', tension: 0 }, { label: 'Balance', data: tots.map(d => d.bal), borderColor: '#1a1a1a', tension: 0, borderDash: [5, 5] }] },
-            options: { responsive: true, plugins: { legend: { labels: { font: { family: 'Jost' } } } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#f2efe9' } } } }
+            data: {
+                labels: MESES,
+                datasets: [
+                    { label: 'Ingresos', data: tots.map(d => d.ing), borderColor: '#276749', backgroundColor: 'transparent', tension: 0 },
+                    { label: 'Gastos Tot.', data: tots.map(d => d.eg + d.gf), borderColor: '#9b2c2c', backgroundColor: 'transparent', tension: 0 },
+                    { label: 'Balance', data: tots.map(d => d.bal), borderColor: '#1a1a1a', tension: 0, borderDash: [5, 5] }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { labels: { font: { family: 'Jost' } } } },
+                scales: { x: { grid: { display: false } }, y: { grid: { color: '#f2efe9' } } }
+            }
         });
     };
 
     window.showTab = function(name, btn) {
-        ['resumen', 'ingresar', 'anual', 'usuarios'].forEach(t => { const el = document.getElementById('tab-' + t); if(el) el.style.display = t === name ? 'block' : 'none'; });
+        ['resumen', 'ingresar', 'anual', 'usuarios'].forEach(t => {
+            const el = document.getElementById('tab-' + t);
+            if(el) el.style.display = t === name ? 'block' : 'none';
+        });
         document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         if(name === 'anual') window.renderAnual();
@@ -935,9 +1082,24 @@
         if(!movs.length){ toast('No hay datos.', 'er'); return; }
         const wb = XLSX.utils.book_new();
         const rows = [['Año', 'Mes', 'Fecha y Hora Exacta (Trazabilidad)', 'Tienda', 'Tipo', 'Categoría', 'Monto', 'Registrado Por', 'Nota']];
-        movs.sort((a,b) => a.mes - b.mes).forEach(m => { rows.push([m.anio, MESES_F[m.mes], fmtFecha(m.ts), m.tienda || 'Online', m.tipo === 'GastoFijo' ? 'Gasto Fijo' : m.tipo, m.cat, parseFloat(m.monto), m.usuario || 'hethea', m.nota || '']); });
+        movs.sort((a,b) => a.mes - b.mes).forEach(m => {
+            rows.push([
+                m.anio,
+                MESES_F[m.mes],
+                fmtFecha(m.ts),
+                m.tienda || 'Online',
+                m.tipo === 'GastoFijo' ? 'Gasto Fijo' : m.tipo,
+                m.cat,
+                parseFloat(m.monto),
+                m.usuario || 'hethea',
+                m.nota || ''
+            ]);
+        });
         const ws1 = XLSX.utils.aoa_to_sheet(rows);
-        ws1['!cols'] = [{ wch: 6 }, { wch: 12 }, { wch: 22 }, { wch: 14 }, { wch: 12 }, { wch: 25 }, { wch: 14 }, { wch: 15 }, { wch: 25 }];
+        ws1['!cols'] = [
+            { wch: 6 }, { wch: 12 }, { wch: 22 }, { wch: 14 },
+            { wch: 12 }, { wch: 25 }, { wch: 14 }, { wch: 15 }, { wch: 25 }
+        ];
         XLSX.utils.book_append_sheet(wb, ws1, 'Movimientos');
         XLSX.writeFile(wb, `Reporte_HETHEA_${anio}.xlsx`);
         toast('Reporte generado');
