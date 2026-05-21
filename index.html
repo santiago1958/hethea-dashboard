@@ -284,7 +284,13 @@
           </select></div>
         <div class="field"><label>Monto ($)</label><input type="number" id="mtoI" placeholder="0.00" min="0" step="0.01"></div>
         <div class="field"><label>Nota (opcional)</label><input type="text" id="ntaI" placeholder="Referencia del ingreso..."></div>
-        <button type="button" class="btn btn-p" style="width:100%;margin-top:10px" onclick="agregar('Ingreso')">Registrar Ingreso</button>
+        <button type="button" class="btn btn-p" style="width:100%;margin-top:10px" onclick="agregar('Ingreso')">Registrar Ingreso manual</button>
+
+        <hr style="margin:20px 0; border:0; border-top:1px dashed var(--border);">
+        <h4 style="font-size:0.8rem; color:var(--accent); margin-bottom:10px;">Importación Masiva (Excel / CSV)</h4>
+        <input type="file" id="fileExcelVentas" accept=".xlsx, .xls, .csv" style="display:none;" onchange="procesarExcelVentas(event)">
+        <button type="button" class="btn btn-w" style="width:100%; border: 1px dashed var(--accent);" onclick="document.getElementById('fileExcelVentas').click()">Subir Excel de Ventas</button>
+        <div id="progresoExcel" style="font-size:0.7rem; color:var(--muted); text-align:center; margin-top:8px; display:none;"></div>
       </div>
       <div class="igroup">
         <h3 style="color:var(--danger)">Egreso Operativo</h3>
@@ -425,6 +431,26 @@
         const min = String(d.getMinutes()).padStart(2, '0');
         const seg = String(d.getSeconds()).padStart(2, '0');
         return `${dia}/${mes}/${anioStr} ${hora}:${min}:${seg}`;
+    }
+
+    // ── PARSEO DE FECHA DESDE EXCEL ──
+    function parseExcelDate(fechaVal) {
+        if(!fechaVal) return Date.now();
+        if(typeof fechaVal === 'number') {
+            return new Date(Math.round((fechaVal - 25569) * 86400 * 1000)).getTime();
+        }
+        const str = fechaVal.toString().trim();
+        const parts = str.split(/[\s/:]+/);
+        if(parts.length >= 5) {
+            let yy = parseInt(parts[2]);
+            if(yy < 100) yy += 2000;
+            const mm = parseInt(parts[1]) - 1;
+            const dd = parseInt(parts[0]);
+            const hh = parseInt(parts[3]);
+            const min = parseInt(parts[4]);
+            return new Date(yy, mm, dd, hh, min).getTime();
+        }
+        return Date.now();
     }
 
     function toast(msg, type='ok') {
@@ -674,7 +700,7 @@
         return { ing, eg, gf, bal: ing - eg - gf };
     }
 
-    // ── ABSTRACCIÓN CRUD ──
+    // ── ABSTRACCIÓN CRUD MANUAL ──
     window.agregar = async function(tipo) {
         let cat, mto, nta;
         const tnd = document.getElementById('inpTienda').value;
@@ -705,6 +731,110 @@
             console.error("Error en base de datos:", e);
             toast('Error al registrar: ' + e.message, 'er');
         }
+    };
+
+    // ── PROCESAMIENTO MASIVO DE EXCEL (CON REGLA DE SOBREESCRITURA) ──
+    window.procesarExcelVentas = async function(e) {
+        const file = e.target.files[0];
+        if(!file) return;
+
+        const tnd = document.getElementById('inpTienda').value;
+        if(!tnd) { toast('Selecciona la Tienda en la barra superior primero', 'er'); return; }
+
+        const status = document.getElementById('progresoExcel');
+        status.style.display = 'block';
+        status.textContent = 'Leyendo archivo Excel...';
+
+        const reader = new FileReader();
+        reader.onload = async function(ev) {
+            try {
+                const data = new Uint8Array(ev.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(sheet);
+
+                if(rows.length === 0) throw new Error('El archivo está vacío');
+
+                const ventasMap = new Map();
+
+                rows.forEach(row => {
+                    const numPedido = row['Pedido #'] || row['Pedido'];
+                    const fechaRaw = row['Fecha'] || row['Date'];
+                    const montoRaw = row['Ventas netas'] || row['Total'];
+                    const prods = row['Producto(s)'] || row['Productos'];
+
+                    if(numPedido && montoRaw !== undefined) {
+                        const monto = parseFloat(montoRaw.toString().replace(/[^0-9.-]+/g,""));
+                        const ts = parseExcelDate(fechaRaw);
+
+                        if(ventasMap.has(numPedido)) {
+                            // Si se repite en el mismo excel, conservamos el de la fecha más reciente
+                            if(ts > ventasMap.get(numPedido).ts) {
+                                ventasMap.set(numPedido, { numPedido, ts, monto, prods });
+                            }
+                        } else {
+                            ventasMap.set(numPedido, { numPedido, ts, monto, prods });
+                        }
+                    }
+                });
+
+                if(ventasMap.size === 0) throw new Error('No se encontraron columnas requeridas (Pedido #, Ventas netas, Fecha)');
+
+                status.textContent = 'Sincronizando con base de datos (Puede tardar unos segundos)...';
+
+                // Obtener referencias existentes para hacer upsert
+                const { data: existentes } = await sb.from('movimientos')
+                    .select('id, pedido_ref')
+                    .not('pedido_ref', 'is', null);
+
+                const mapExistentes = new Map();
+                if(existentes) {
+                    existentes.forEach(x => mapExistentes.set(x.pedido_ref, x.id));
+                }
+
+                let insertados = 0;
+                let actualizados = 0;
+
+                for (const [key, val] of ventasMap.entries()) {
+                    const d = new Date(val.ts);
+                    const payload = {
+                        anio: d.getFullYear(),
+                        mes: d.getMonth(),
+                        ts: val.ts,
+                        tipo: 'Ingreso',
+                        cat: 'Ventas',
+                        monto: val.monto,
+                        nota: val.prods ? `Pedido #${val.numPedido} - ${val.prods}` : `Pedido #${val.numPedido}`,
+                        usuario: currentUser,
+                        tienda: tnd,
+                        pedido_ref: val.numPedido.toString()
+                    };
+
+                    if(mapExistentes.has(val.numPedido.toString())) {
+                        payload.id = mapExistentes.get(val.numPedido.toString());
+                        await sb.from('movimientos').upsert(payload);
+                        actualizados++;
+                    } else {
+                        await sb.from('movimientos').insert(payload);
+                        insertados++;
+                    }
+                }
+
+                toast(`¡Proceso completado! ${insertados} registrados, ${actualizados} actualizados.`);
+                status.style.display = 'none';
+                document.getElementById('fileExcelVentas').value = ''; // Limpiar input
+                
+                // Recargar datos sin refrescar la página
+                cargarDatos();
+
+            } catch(err) {
+                console.error(err);
+                toast(err.message, 'er');
+                status.style.display = 'none';
+                document.getElementById('fileExcelVentas').value = ''; // Limpiar input
+            }
+        };
+        reader.readAsArrayBuffer(file);
     };
 
     // ── ELIMINACIÓN CON EXIGENCIA COMPLETA DE CREDENCIALES (USUARIO Y CONTRASEÑA) ──
@@ -790,34 +920,4 @@
     window.renderAnual = function() {
         if(currentRol === 'usuario') return;
         const tots = MESES.map((_, i) => totMes(i));
-        const sI = tots.reduce((a, d) => a + d.ing, 0), sE = tots.reduce((a, d) => a + d.eg, 0), sG = tots.reduce((a, d) => a + d.gf, 0), sB = tots.reduce((a, d) => a + d.bal, 0);
-        document.getElementById('anualTable').innerHTML = `<thead><tr><th>Mes</th><th>Ingresos</th><th>Egresos</th><th>G.Fijos</th><th>Balance</th></tr></thead><tbody>${tots.map((d, i) => `<tr> <td style="font-weight:600">${MESES_F[i]}</td> <td class="pos">${fmt(d.ing)}</td><td class="neg">${fmt(d.eg)}</td> <td style="color:var(--warn)">${fmt(d.gf)}</td> <td class="${d.bal >= 0 ? 'pos' : 'neg'}">${fmt(d.bal)}</td></tr>`).join('')} <tr class="total-row"><td>AÑO ${anio}</td><td class="pos">${fmt(sI)}</td><td class="neg">${fmt(sE)}</td><td style="color:var(--warn)">${fmt(sG)}</td><td class="${sB >= 0 ? 'pos' : 'neg'}">${fmt(sB)}</td></tr> </tbody>`;
-        if(lineInst) lineInst.destroy();
-        lineInst = new Chart(document.getElementById('lineChart'), {
-            type: 'line',
-            data: { labels: MESES, datasets: [{ label: 'Ingresos', data: tots.map(d => d.ing), borderColor: '#276749', backgroundColor: 'transparent', tension: 0 }, { label: 'Gastos Tot.', data: tots.map(d => d.eg + d.gf), borderColor: '#9b2c2c', backgroundColor: 'transparent', tension: 0 }, { label: 'Balance', data: tots.map(d => d.bal), borderColor: '#1a1a1a', tension: 0, borderDash: [5, 5] }] },
-            options: { responsive: true, plugins: { legend: { labels: { font: { family: 'Jost' } } } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#f2efe9' } } } }
-        });
-    };
-
-    window.showTab = function(name, btn) {
-        ['resumen', 'ingresar', 'anual', 'usuarios'].forEach(t => { const el = document.getElementById('tab-' + t); if(el) el.style.display = t === name ? 'block' : 'none'; });
-        document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        if(name === 'anual') renderAnual();
-    };
-
-    window.exportarExcel = function() {
-        if(!movs.length){ toast('No hay datos.', 'er'); return; }
-        const wb = XLSX.utils.book_new();
-        const rows = [['Año', 'Mes', 'Fecha y Hora Exacta (Trazabilidad)', 'Tienda', 'Tipo', 'Categoría', 'Monto', 'Registrado Por', 'Nota']];
-        movs.sort((a,b) => a.mes - b.mes).forEach(m => { rows.push([m.anio, MESES_F[m.mes], fmtFecha(m.ts), m.tienda || 'Online', m.tipo === 'GastoFijo' ? 'Gasto Fijo' : m.tipo, m.cat, parseFloat(m.monto), m.usuario || 'hethea', m.nota || '']); });
-        const ws1 = XLSX.utils.aoa_to_sheet(rows);
-        ws1['!cols'] = [{ wch: 6 }, { wch: 12 }, { wch: 22 }, { wch: 14 }, { wch: 12 }, { wch: 25 }, { wch: 14 }, { wch: 15 }, { wch: 25 }];
-        XLSX.utils.book_append_sheet(wb, ws1, 'Movimientos');
-        XLSX.writeFile(wb, `Reporte_HETHEA_${anio}.xlsx`);
-        toast('Reporte generado');
-    };
-</script>
-</body>
-</html>
+        const sI = tots.reduce((a, d) => a + d.ing, 0), sE = tots.reduce((a, d) => a + d.eg, 0), sG = tots.reduce((
