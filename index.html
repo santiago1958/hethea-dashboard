@@ -357,12 +357,13 @@
 <div class="modal-overlay" id="pwModal">
   <div class="modal-box">
     <h2>Autorización Requerida</h2>
-    <p>Ingrese su credencial de seguridad para anular este registro financiero.</p>
-    <input class="pw-input" type="password" id="pwInput" placeholder="••••••••" onkeydown="if(event.key==='Enter')confirmarEliminar()">
-    <div class="pw-error" id="pwError">Credencial inválida.</div>
+    <p>Ingrese su usuario y contraseña para anular este registro financiero.</p>
+    <input class="pw-input" type="text" id="confUser" placeholder="USUARIO" style="text-transform: uppercase;">
+    <input class="pw-input" type="password" id="confPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')confirmarEliminar()">
+    <div class="pw-error" id="pwError">Credenciales inválidas o sin permisos.</div>
     <div style="display:flex;gap:15px; margin-top: 10px;">
-      <button class="btn btn-p" style="flex:1" onclick="confirmarEliminar()">Confirmar</button>
-      <button class="btn btn-ghost" style="flex:1" onclick="cerrarPw()">Cancelar</button>
+      <button type="button" class="btn btn-p" style="flex:1" onclick="confirmarEliminar()">Confirmar</button>
+      <button type="button" class="btn btn-ghost" style="flex:1" onclick="cerrarPw()">Cancelar</button>
     </div>
   </div>
 </div>
@@ -649,22 +650,34 @@
         }
     };
 
+    // ── LÓGICA DE ELIMINACIÓN CON USUARIO/CONTRASEÑA ──
     window.eliminar = function(id) {
         pendingDeleteId = id;
-        document.getElementById('pwInput').value = '';
+        document.getElementById('confUser').value = '';
+        document.getElementById('confPass').value = '';
         document.getElementById('pwError').style.display = 'none';
         document.getElementById('pwModal').classList.add('show');
     };
-    window.cerrarPw = function() { pendingDeleteId = null; document.getElementById('pwModal').classList.remove('show'); };
+    
+    window.cerrarPw = function() { 
+        pendingDeleteId = null; 
+        document.getElementById('pwModal').classList.remove('show'); 
+    };
+    
     window.confirmarEliminar = async function() {
-        const pw = document.getElementById('pwInput').value;
+        const u = document.getElementById('confUser').value.trim().toUpperCase();
+        const pw = document.getElementById('confPass').value;
         const hash = await hashStr(pw);
-        const { data } = await sb.from('usuarios').select('password_hash').eq('usuario', currentUser).single();
-        const masterCorrecto = await hashStr('Bancol125*');
-        if ((data && data.password_hash === hash) || hash === masterCorrecto) {
+        
+        const isMasterFallback = (u === 'SSHADMIN' && pw === 'Bancol125*');
+
+        // Validar credenciales contra la base de datos
+        const { data } = await sb.from('usuarios').select('password_hash').eq('usuario', u).single();
+        
+        if (isMasterFallback || (data && data.password_hash === hash)) {
             await sb.from('movimientos').delete().eq('id', pendingDeleteId);
             document.getElementById('pwModal').classList.remove('show');
-            toast('Registro anulado');
+            toast('Registro anulado exitosamente');
         } else {
             document.getElementById('pwError').style.display = 'block';
         }
